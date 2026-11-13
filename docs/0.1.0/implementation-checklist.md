@@ -1,7 +1,7 @@
 # Applied Singulo 0.1.0 Beta 実装チェックリスト
 
-作成日: 2026-11-13。**これは提案と実装計画です。以下の機能はまだ実装していません。**
-対象: Minecraft 1.21.1 / NeoForge / Singulo 0.17.1 / AE2 19.2.19。
+作成日: 2026-11-13。**これは全自動連携の計画です。先行して実装した手動コマンド経路は [開発コマンド](development-commands.md) を参照してください。チェックのない項目は未完了です。**
+対象: Minecraft 1.21.1 / NeoForge / API追加済み未公開Singulo 0.18.0 / AE2 19.2.19。
 
 ## ねらいと最小構成
 
@@ -93,3 +93,16 @@ Singulo 0.17.1 の `WorkConsoleBlockEntity.start(...)` は `ServerPlayer` を受
 - [Singulo DeliveryPortBlockEntity 0.17.1](https://github.com/GenichiMaruo/Singulo/blob/2242440d050232de7359caa1abc81797effd2bd1/src/main/java/io/github/genichimaruo/singulo/android/work/DeliveryPortBlockEntity.java)
 
 AE2の参照コミットは1.21.1ブランチの調査時点。依存を固定した19.2.19とのAPI差分は実装着手時に再照合する。ここにある提案メソッド名や状態は既存APIの存在を意味しない。
+
+
+## 実装済みの第一段階（2026-11-13、ローカルのみ）
+
+- [x] 本体 feature/0.18.0 に AE2 非依存の注文 API を追加し、コミット。
+- [x] UUID による再送識別、所有者確認、状態取得、取消、終端履歴の確認・保存。
+- [x] Applied 側で実 AE2 パターンの単一アイテム出力を読み、検証用コマンドから API を使用。
+- [x] 本体 API 8件、Applied 8件の実ゲームテストと配布 JAR 検査。
+- [ ] Pattern Provider からの自動受付と材料の預かり・返却。
+- [ ] ME への納品とクラフト CPU 側の完了整合性。
+- [ ] 本体 API コミットの push 後、Applied 開発ブランチを push して CI 検証。
+
+詳細と制約は [検証記録](verification.md) と [開発コマンド](development-commands.md) を参照。

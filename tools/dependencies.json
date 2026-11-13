@@ -1,0 +1,10 @@
+{
+  "appliedenergistics2-19.2.19.jar": {
+    "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/neoforge/v19.2.19/appliedenergistics2-19.2.19.jar",
+    "sha256": "7db959595ca8734acccac51c963567460e7db9f31b145b23dea72778b692777b"
+  },
+  "guideme-21.1.1.jar": {
+    "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v21.1.1/guideme-21.1.1.jar",
+    "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
+  }
+}

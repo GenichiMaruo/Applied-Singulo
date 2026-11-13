@@ -9,6 +9,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 tasks.named('jar', Jar) {
     archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${mod_loader_suffix}.jar"
     from('LICENSE')
+    exclude 'io/github/genichimaruo/appliedsingulo/gametest/**'
+    exclude 'data/applied_singulo/structure/empty.nbt'
 }
 // Development dependencies only; do not bundle into the addon.
 ['singuloJar', 'ae2Jar', 'guideMeJar'].each { key ->
@@ -40,6 +42,8 @@ neoForge {
     mods { "${mod_id}" { sourceSet(sourceSets.main) } }
 }
 tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.configureEach { dependsOn requireDependencies }
+tasks.named('compileJava') { dependsOn requireDependencies }
+
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def values = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
         loader_version_range: loader_version_range, mod_id: mod_id, mod_name: mod_name,
