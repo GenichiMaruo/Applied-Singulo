@@ -20,7 +20,7 @@ tasks.named('jar', Jar) {
 }
 def requireDependencies = tasks.register('requireDependencies') {
     doLast {
-        ['singuloJar', 'ae2Jar'].each { key ->
+        ['singuloJar', 'ae2Jar', 'guideMeJar'].each { key ->
             if (!providers.gradleProperty(key).isPresent())
                 throw new GradleException("Use -P${key}=/absolute/path/to/the/matching.jar for a game run")
         }

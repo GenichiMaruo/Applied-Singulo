@@ -8,6 +8,7 @@ p = dict(s.split("=", 1) for s in (root / "gradle.properties").read_text().split
 name = f"{p['mod_archive_name']}-{p['mod_version']}-{p['minecraft_version']}{p['mod_loader_suffix']}.jar"
 with zipfile.ZipFile(root / "build/libs" / name) as z:
     names = z.namelist()
+    assert "LICENSE" in names
     assert "io/github/genichimaruo/appliedsingulo/AppliedSingulo.class" in names
     m = tomllib.loads(z.read("META-INF/neoforge.mods.toml").decode())
     assert m["mods"][0]["modId"] == "applied_singulo"

@@ -18,10 +18,10 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 ```sh
 ./gradlew --no-daemon build
 python3 tools/check_distribution.py
-./gradlew runClient -PsinguloJar=/path/Singulo-0.17.1-1.21.1N.jar -Pae2Jar=/path/appliedenergistics2-19.2.19.jar
+./gradlew runClient -PsinguloJar=/path/Singulo-0.17.1-1.21.1N.jar -Pae2Jar=/path/appliedenergistics2-19.2.19.jar -PguideMeJar=/path/guideme-21.1.1.jar
 ```
 
-依存 JAR は正式配布元から入手し、`libs/` 等へ置いてください。Git には含めません。GuideME が別途必要な配布構成では `-PguideMeJar=/path/guideme.jar` を追加します。サーバーは `runServer`。初回 EULA は利用者が確認してください。
+依存 JAR は正式配布元から入手し、`libs/` 等へ置いてください。Git には含めません。基準の AE2 19.2.19 は GuideME 21.1.1 以上を必須とするため、その対応 JAR も指定します。サーバーは `runServer`。初回 EULA は利用者が確認してください。
 
 ビルド成功はゲーム内連携の動作確認ではありません。GameTest はまだ追加しておらず、0件完走を成功扱いしません。
 
