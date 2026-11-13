@@ -1,0 +1,30 @@
+name: Build
+on:
+  push:
+    branches: ['1.21.1', 'feature/**', 'fix/**']
+  pull_request:
+    branches: ['1.21.1']
+permissions:
+  contents: read
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: bash gradlew --no-daemon build
+      - run: python3 tools/check_distribution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: applied-singulo-bootstrap
+          path: build/libs/Applied-Singulo-*.jar
+          if-no-files-found: error
+# Bootstrap checks only: gameplay integration remains a beta checklist gate.

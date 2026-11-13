@@ -1,0 +1,55 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+version = mod_version
+group = mod_group_id
+base { archivesName = mod_archive_name }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+tasks.named('jar', Jar) {
+    archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${mod_loader_suffix}.jar"
+    from('LICENSE')
+}
+// Development dependencies only; do not bundle into the addon.
+['singuloJar', 'ae2Jar', 'guideMeJar'].each { key ->
+    if (providers.gradleProperty(key).isPresent()) {
+        def dependencyJar = file(providers.gradleProperty(key).get())
+        if (!dependencyJar.isFile()) throw new GradleException("Missing ${key}: ${dependencyJar}")
+        dependencies { compileOnly files(dependencyJar); runtimeOnly files(dependencyJar) }
+    }
+}
+def requireDependencies = tasks.register('requireDependencies') {
+    doLast {
+        ['singuloJar', 'ae2Jar'].each { key ->
+            if (!providers.gradleProperty(key).isPresent())
+                throw new GradleException("Use -P${key}=/absolute/path/to/the/matching.jar for a game run")
+        }
+    }
+}
+neoForge {
+    version = project.neo_version
+    runs {
+        client { client() }
+        server { server(); programArgument '--nogui' }
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = project.file('build/gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+    }
+    mods { "${mod_id}" { sourceSet(sourceSets.main) } }
+}
+tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.configureEach { dependsOn requireDependencies }
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def values = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
+        loader_version_range: loader_version_range, mod_id: mod_id, mod_name: mod_name,
+        mod_version: mod_version, mod_license: mod_license, mod_authors: mod_authors,
+        singulo_version_range: singulo_version_range, ae2_version_range: ae2_version_range]
+    inputs.properties values
+    expand values
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/modMetadata')
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
