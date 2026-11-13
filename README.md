@@ -28,3 +28,7 @@ python3 tools/check_distribution.py
 [開発・配布ルール](docs/development.md) / [変更履歴](CHANGELOG.md)
 
 License: All Rights Reserved (Singulo / Singulo Arsenal と同方針)。AE2 チームの公式アドオンではありません。
+
+## 0.1.0 開発計画
+
+[Android × AE2 自動化連携の実装チェックリスト](docs/0.1.0/implementation-checklist.md)
