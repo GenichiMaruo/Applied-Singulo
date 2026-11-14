@@ -59,6 +59,10 @@ public final class AndroidOrderQueue {
     /** Claimed products and refunds waiting for ME. Claims never exceed its free room. */
     private final ItemStackHandler outputs = new ItemStackHandler(OUTPUT_SLOTS) {
         @Override protected void onContentsChanged(int slot) { changed.run(); }
+        @Override public boolean isItemValid(int slot, ItemStack stack) {
+            // Recipe samples are descriptions, not player-owned fluid containers.
+            return !SinguloLinks.isFluid(stack);
+        }
     };
 
     public AndroidOrderQueue(Runnable changed) { this.changed = changed; }
@@ -182,8 +186,9 @@ public final class AndroidOrderQueue {
             job.reason = receipt.reason();
             job.retryAt = now + RETRY_DELAY;   // we keep the materials; AE2 keeps waiting
         } else {
-            // Accepted earlier (e.g. our save lagged behind Singulo's). Never relinquish a second time: the
-            // copy we still hold is ours and goes back to ME.
+            // Accepted earlier (e.g. our save lagged behind Singulo's): custody already transferred.
+            // This stale local copy must NOT also be refunded to ME.
+            job.materials.clear();
             job.submitted = true;
             job.state = OrderJob.State.RUNNING;
             job.reason = "replayed_accepted_request";
@@ -277,6 +282,12 @@ public final class AndroidOrderQueue {
     private void returnHeld(OrderJob job) {
         for (var it = job.materials.iterator(); it.hasNext(); ) {
             var stack = it.next();
+            if (SinguloLinks.isFluid(stack)) {
+                OrderJob.merge(fluidOutputs, stack.copy());
+                it.remove();
+                changed.run();
+                continue;
+            }
             var rest = ItemHandlerHelper.insertItemStacked(outputs, stack, false);
             if (rest.isEmpty()) it.remove(); else stack.setCount(rest.getCount());
         }
@@ -289,16 +300,26 @@ public final class AndroidOrderQueue {
      * If ME is full they stay here (and further claims wait in Singulo custody): never discarded.
      */
     public void sendOutputs(@Nullable UnaryOperator<ItemStack> sink) {
-        for (var it = returnLater.iterator(); it.hasNext(); ) {
-            var rest = ItemHandlerHelper.insertItemStacked(outputs, it.next(), false);
-            if (rest.isEmpty()) it.remove();
+        for (var it = returnLater.listIterator(); it.hasNext(); ) {
+            var stack = it.next();
+            if (SinguloLinks.isFluid(stack)) {
+                OrderJob.merge(fluidOutputs, stack.copy());
+                it.remove();
+                changed.run();
+                continue;
+            }
+            var rest = ItemHandlerHelper.insertItemStacked(outputs, stack.copy(), false);
+            if (rest.isEmpty()) it.remove(); else it.set(rest);
+            if (!ItemStack.matches(stack, rest)) changed.run();
         }
         boolean any = false, stuck = false;
         for (int i = 0; i < fluidOutputs.size(); i++) {
             any = true;
             if (sink == null) { stuck = true; continue; }
-            var rest = sink.apply(fluidOutputs.get(i).copy());
+            var stack = fluidOutputs.get(i);
+            var rest = sink.apply(stack.copy());
             fluidOutputs.set(i, rest);
+            if (!ItemStack.matches(stack, rest)) changed.run();
             stuck |= !rest.isEmpty();
         }
         if (fluidOutputs.removeIf(ItemStack::isEmpty)) changed.run();
@@ -308,11 +329,18 @@ public final class AndroidOrderQueue {
             any = true;
             if (sink == null) { stuck = true; continue; }
             var rest = sink.apply(stack.copy());
-            if (rest.getCount() != stack.getCount()) outputs.setStackInSlot(i, rest);
+            if (!ItemStack.matches(stack, rest)) outputs.setStackInSlot(i, rest);
             stuck |= !rest.isEmpty();
         }
         boolean blocked = any && stuck;
         if (blocked != outputBlocked) { outputBlocked = blocked; changed.run(); }
+    }
+
+    /** Server-owned fluid custody only. Never accept player recipe samples through this path. */
+    public void recoverFluid(ItemStack sample) {
+        if (!SinguloLinks.isFluid(sample)) throw new IllegalArgumentException("Not a fluid");
+        OrderJob.merge(fluidOutputs, sample.copy());
+        changed.run();
     }
 
     // ------------------------------------------------------------------ cancellation / removal
@@ -352,6 +380,13 @@ public final class AndroidOrderQueue {
         drops.addAll(outputContents());
         drops.addAll(returnLater);
         drops.addAll(fluidOutputs);
+        if (level instanceof ServerLevel server && owner != null) {
+            drops.removeIf(stack -> {
+                if (!SinguloLinks.isFluid(stack)) return false;
+                OrphanedEscrows.get(server).keepFluid(owner, pos, stack);
+                return true;
+            });
+        }
         fluidOutputs.clear();
         jobs.clear();
         returnLater.clear();

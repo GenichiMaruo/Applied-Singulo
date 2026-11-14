@@ -14,14 +14,14 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 
 - 既定・維持ブランチ `1.21.1`、開発ブランチ `feature/0.1.0`
 - JAR: `Applied-Singulo-0.1.0-1.21.1N.jar` (`N` = NeoForge)。予定公開区分は **Beta**（JAR 名に beta は付けません）。
-- 1.20.1 移植は今回の対象外です。
+- 1.20.1 Forge / NeoForge は対応ブランチで準備中です。
 
 ## 開発
 
 ```sh
 ./gradlew runClient                 # 依存 JAR を自動取得してクライアント起動
 ./gradlew build                     # ビルド
-./gradlew runGameTestServer         # 実依存入り GameTest (18件)
+./gradlew runGameTestServer         # 実依存入り GameTest (39件)
 python3 tools/check_distribution.py # 配布 JAR 検査
 ```
 

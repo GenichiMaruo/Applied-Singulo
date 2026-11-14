@@ -26,6 +26,40 @@ public final class OrphanedEscrows extends SavedData {
 
     private record Entry(UUID owner, UUID request, BlockPos pos) { }
     private final List<Entry> entries = new ArrayList<>();
+    private record BufferedFluid(UUID owner, BlockPos pos, ItemStack sample) { }
+    private final List<BufferedFluid> fluids = new ArrayList<>();
+
+    void keepFluid(UUID owner, BlockPos pos, ItemStack sample) {
+        fluids.add(new BufferedFluid(owner, pos.immutable(), sample.copy()));
+        setDirty();
+    }
+
+    /** Replacing an interface at the same position recovers this owner's fluid, including partial mB. */
+    public void recover(ServerLevel level, UUID owner, BlockPos pos, AndroidOrderQueue queue) {
+        for (var it = fluids.iterator(); it.hasNext(); ) {
+            var f = it.next();
+            if (!f.owner.equals(owner) || !f.pos.equals(pos)) continue;
+            queue.recoverFluid(f.sample);
+            it.remove(); setDirty();
+        }
+        for (var e : entries) {
+            if (!e.owner.equals(owner) || !e.pos.equals(pos)) continue;
+            var snap = AndroidEscrows.snapshot(level, owner, e.request);
+            recoverFluidSlots(level, queue, e, true, snap.products());
+            if ((snap.phase() == AndroidEscrows.Phase.COMPLETED || snap.phase() == AndroidEscrows.Phase.RECOVERABLE)
+                    && !snap.workerPending()) recoverFluidSlots(level, queue, e, false, snap.materials());
+        }
+    }
+
+    private static void recoverFluidSlots(ServerLevel level, AndroidOrderQueue queue, Entry e,
+            boolean products, List<ItemStack> slots) {
+        for (int slot = 0; slot < slots.size(); slot++) {
+            var fluid = AndroidEscrows.fluidOf(slots.get(slot));
+            if (fluid.isEmpty()) continue;
+            var got = AndroidEscrows.claim(level, e.owner, e.request, products, slot, fluid.getAmount(), false);
+            if (!got.isEmpty()) queue.recoverFluid(got);
+        }
+    }
 
     public static OrphanedEscrows get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(OrphanedEscrows::new, OrphanedEscrows::load), NAME);
@@ -63,7 +97,8 @@ public final class OrphanedEscrows extends SavedData {
 
     private static void dropAll(ServerLevel level, Entry e, boolean products, List<ItemStack> slots) {
         for (int slot = 0; slot < slots.size(); slot++) {
-            if (slots.get(slot).isEmpty()) continue;
+            // A sample is not a physical fluid container. Keep fluid in escrow until owner replacement.
+            if (slots.get(slot).isEmpty() || SinguloLinks.isFluid(slots.get(slot))) continue;
             var got = AndroidEscrows.claim(level, e.owner, e.request, products, slot, slots.get(slot).getCount(), false);
             if (!got.isEmpty()) Containers.dropItemStack(level, e.pos.getX() + 0.5, e.pos.getY() + 0.5, e.pos.getZ() + 0.5, got);
         }
@@ -80,6 +115,15 @@ public final class OrphanedEscrows extends SavedData {
             list.add(t);
         }
         tag.put("entries", list);
+        var buffered = new ListTag();
+        for (var f : fluids) {
+            var t = new CompoundTag();
+            t.putUUID("owner", f.owner);
+            t.putLong("pos", f.pos.asLong());
+            t.put("sample", f.sample.save(registries));
+            buffered.add(t);
+        }
+        tag.put("fluids", buffered);
         return tag;
     }
 
@@ -89,6 +133,12 @@ public final class OrphanedEscrows extends SavedData {
             var t = (CompoundTag) raw;
             if (t.hasUUID("owner") && t.hasUUID("request"))
                 data.entries.add(new Entry(t.getUUID("owner"), t.getUUID("request"), BlockPos.of(t.getLong("pos"))));
+        }
+        for (Tag raw : tag.getList("fluids", Tag.TAG_COMPOUND)) {
+            var t = (CompoundTag) raw;
+            var sample = ItemStack.parseOptional(registries, t.getCompound("sample"));
+            if (t.hasUUID("owner") && SinguloLinks.isFluid(sample))
+                data.fluids.add(new BufferedFluid(t.getUUID("owner"), BlockPos.of(t.getLong("pos")), sample));
         }
         return data;
     }

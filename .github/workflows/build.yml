@@ -37,4 +37,5 @@ jobs:
           path: |
             build/libs/Applied-Singulo-*.jar
             build/integration-gametest.log
+            build/release-manifest.json
           if-no-files-found: error
