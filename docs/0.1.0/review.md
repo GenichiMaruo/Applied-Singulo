@@ -37,3 +37,7 @@ its held inputs refunded before calling Singulo's custody API. Plain crafting (i
 fluid samples) remains eligible; machine automation is not claimed as a supported beta feature.
 
 The fluid-removal regression includes a SavedData save/load round trip before owner recovery.
+
+The stale-pattern rejection runs only for an UNKNOWN escrow ID. If Singulo already accepted that ID,
+the normal replay path clears the stale local offer without refunding a duplicate, even after a rack
+recipe changes. A real accepted-escrow regression covers this save-order scenario.

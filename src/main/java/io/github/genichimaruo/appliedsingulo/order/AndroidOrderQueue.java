@@ -171,7 +171,10 @@ public final class AndroidOrderQueue {
 
     private void submit(ServerLevel level, OrderJob job, long now) {
         var snapshot = AndroidOrders.recipes(level, job.console, owner);
-        if (snapshot.state() == AndroidOrders.SnapshotState.AVAILABLE) {
+        // An accepted request may outlive our last block save. Never refund a stale local offer copy.
+        var prior = AndroidEscrows.snapshot(level, owner, job.request);
+        if (prior.phase() == AndroidEscrows.Phase.UNKNOWN
+                && snapshot.state() == AndroidOrders.SnapshotState.AVAILABLE) {
             var matching = snapshot.recipes().stream().filter(r -> !r.outputs().isEmpty()
                 && ItemStack.isSameItemSameComponents(r.outputs().getFirst().sample(), job.target())).toList();
             if (!matching.isEmpty() && matching.stream().noneMatch(SinguloLinks::escrowEligible)) {

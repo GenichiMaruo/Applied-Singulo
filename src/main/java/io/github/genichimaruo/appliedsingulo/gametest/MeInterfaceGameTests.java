@@ -889,6 +889,34 @@ public final class MeInterfaceGameTests {
         h.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void acceptedReplayNeverRefundsAfterRecipeBecomesUnsupported(GameTestHelper h) {
+        var console = workshop(h, false);
+        var q = new AndroidOrderQueue(() -> { });
+        q.setOwner(console.owner());
+        long now = h.getLevel().getGameTime();
+        q.accept(new ItemStack(Items.OAK_PLANKS), 4, List.of(new ItemStack(Items.OAK_LOG)), console.getBlockPos(), now - 200);
+        var staleJob = q.jobs().getFirst();
+        var accepted = AndroidEscrows.submit(h.getLevel(), console.getBlockPos(), console.owner(), staleJob.request,
+            new ItemStack(Items.OAK_PLANKS), 4, staleJob.heldMaterials(), null);
+        h.assertTrue(accepted.acceptedNow(), "Singulo has custody but addon save still says unsubmitted");
+        var card = new ItemStack(singulo("recipe_card"));
+        var grid = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
+        grid.set(0, new ItemStack(Items.OAK_LOG));
+        RecipeData.processing(grid, new ItemStack(Items.OAK_PLANKS, 4), List.of(), ItemStack.EMPTY)
+            .write(card, h.getLevel().registryAccess());
+        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        rack.items().setStackInSlot(1, card);
+        h.assertFalse(SinguloLinks.hasEscrowRecipe(h.getLevel(), console.getBlockPos(), console.owner(),
+            new ItemStack(Items.OAK_PLANKS)), "New rack recipe is unsupported");
+        q.tick(h.getLevel(), now, 1);
+        h.assertTrue(staleJob.submitted() && staleJob.heldMaterials().isEmpty(), "Replay drops only the stale local copy");
+        h.assertTrue(q.outputContents().isEmpty(), "Accepted materials are never refunded a second time");
+        h.assertTrue(AndroidEscrows.snapshot(h.getLevel(), console.owner(), staleJob.request).phase() != AndroidEscrows.Phase.UNKNOWN,
+            "Existing custody remains tracked");
+        h.succeed();
+    }
+
     /** AE2 fluid inputs become Singulo fluid samples, batch by amount, and claimed fluids go back into ME as fluids. */
     @GameTest(template = "empty", timeoutTicks = 400)
     public static void fluidsTravelBetweenMeAndSinguloAsFluids(GameTestHelper h) {
