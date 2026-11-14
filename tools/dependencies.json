@@ -1,9 +1,20 @@
 {
+  "Singulo-0.19.0-1.21.1N.jar": {
+    "property": "singuloJar",
+    "unreleased": true,
+    "note": "Singulo 0.19.0 development API (AndroidEscrows private crafting custody, AndroidOrders.recipes, AndroidSharedStorage). Built from this exact commit; not a release, not hash-pinned. Replace with the published release URL and SHA-256 before publishing Applied Singulo.",
+    "repository": "https://github.com/GenichiMaruo/Singulo.git",
+    "branch": "feature/0.19.0-shared-storage (local, not pushed; feature/0.19.0 b43db6ba + escrow fix bed2d08b + AndroidSharedStorage + multi-step escrow + large-slot fetch fix + machine/fluid escrow)",
+    "commit": "d12d72c0b312931276b655bb30062a09be591502",
+    "localClone": "../Singulo"
+  },
   "appliedenergistics2-19.2.19.jar": {
+    "property": "ae2Jar",
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/neoforge/v19.2.19/appliedenergistics2-19.2.19.jar",
     "sha256": "7db959595ca8734acccac51c963567460e7db9f31b145b23dea72778b692777b"
   },
   "guideme-21.1.1.jar": {
+    "property": "guideMeJar",
     "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v21.1.1/guideme-21.1.1.jar",
     "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
   }

@@ -81,7 +81,7 @@ public final class PatternRequestGameTests {
     public static void commandsAreRegistered(GameTestHelper h) {
         var root = h.getLevel().getServer().getCommands().getDispatcher().getRoot().getChild("appliedsingulo");
         h.assertTrue(root != null, "Development commands must be registered");
-        for (var command : List.of("newid", "submit", "status", "cancel", "acknowledge"))
+        for (var command : List.of("newid", "submit", "status", "cancel", "acknowledge", "snapshot", "interface"))
             h.assertTrue(root.getChild(command) != null, "Missing command: " + command);
         h.succeed();
     }

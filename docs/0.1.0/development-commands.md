@@ -1,15 +1,15 @@
 # 最初の実装: AE2パターンからAndroid注文へ
 
-これは開発用の手動経路です。MEネットワークのクラフト依頼や材料を受け取るブリッジは未実装です。
+これは開発用の手動経路です。ME のクラフト依頼を自動で受ける経路は [アンドロイドMEインターフェース](me-interface.md) を使います。
 
 ## 必要な構成
 
 - Minecraft 1.21.1 / NeoForge 21.1.256 / Java 21
-- **AndroidOrders API が追加された未公開 Singulo 0.18.0 開発版**。一般公開済み0.17.1では動きません。
+- **Singulo 0.19.0 (0.19.x、未公開の開発版)**。0.17.x 以前には AndroidOrders API がありません。
 - AE2 19.2.19 / GuideME 21.1.1
 - 自分が所有する作業指令台、権限のある作業者、登録済みレシピ、既存の資材口に材料。
 
-メタデータは [0.18.0,0.19.0) ですが、0.18.0 という版番号だけでAPIの存在は保証できません。必ずAPI追加コミット以降の本体を使用してください。
+メタデータは [0.19.0,0.20.0) です。開発・テストは `feature/0.19.0` の固定コミットから自動ビルドした Singulo で行います（[詳細](../development.md#singulo-dependency)）。
 
 ## 操作
 
@@ -18,7 +18,8 @@
 3. `/appliedsingulo submit <指令台x y z> <受付UUID> <バッチ数>` で注文する。
 4. `/appliedsingulo status <指令台x y z> <受付UUID>` で明示状態と納品数を見る。
 5. 必要なら `/appliedsingulo cancel <指令台x y z> <受付UUID>`。
-6. 終了結果を確認後、`/appliedsingulo acknowledge <指令台x y z> <受付UUID>` で履歴枠を解放する。**解放したUUIDは再利用しない。**
+6. `/appliedsingulo snapshot <指令台x y z>` で、自分がこの指令台に出した外部注文の一覧と受付履歴の残り枠を見る。
+7. 終了結果を確認後、`/appliedsingulo acknowledge <指令台x y z> <受付UUID>` で履歴枠を解放する。**解放したUUIDは再利用しない。**
 
 コマンドはプレイヤーのみ・64ブロック以内・読み込み済み指令台に限定します。APIには実際のログインプレイヤーのUUIDを渡し、権限を迂回しません。作業者は本体の権限条件に従って自動選択します。
 
@@ -34,11 +35,11 @@
 
 ## テスト
 
-ビルドとGameTestはいずれも3依存JARを指定します。
+依存 JAR は自動取得されます。
 
 ```sh
-./gradlew --no-daemon build -PsinguloJar=/path/Singulo-0.18.0-1.21.1N.jar -Pae2Jar=/path/appliedenergistics2-19.2.19.jar -PguideMeJar=/path/guideme-21.1.1.jar
-./gradlew --no-daemon runGameTestServer -PsinguloJar=/path/Singulo-0.18.0-1.21.1N.jar -Pae2Jar=/path/appliedenergistics2-19.2.19.jar -PguideMeJar=/path/guideme-21.1.1.jar
+./gradlew --no-daemon build
+./gradlew --no-daemon runGameTestServer
 python3 tools/check_distribution.py
 ```
 

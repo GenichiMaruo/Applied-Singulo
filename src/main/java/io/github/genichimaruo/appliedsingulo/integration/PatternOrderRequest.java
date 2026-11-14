@@ -1,5 +1,6 @@
 package io.github.genichimaruo.appliedsingulo.integration;
 
+import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.stacks.AEItemKey;
 import net.minecraft.world.item.ItemStack;
@@ -23,7 +24,16 @@ public record PatternOrderRequest(ItemStack target, long count) {
         if (pattern.isEmpty() || !PatternDetailsHelper.isEncodedPattern(pattern))
             throw new IllegalArgumentException("Hold an AE2 encoded pattern in your main hand");
         var details = PatternDetailsHelper.decodePattern(pattern, level);
-        if (details == null || details.getOutputs().size() != 1)
+        if (details == null)
+            throw new IllegalArgumentException("Only patterns with one output are supported");
+        return fromDetails(details, batches);
+    }
+
+    /** Shared validation for held patterns and Pattern Provider pushes. */
+    public static PatternOrderRequest fromDetails(IPatternDetails details, int batches) {
+        if (batches <= 0 || batches > MAX_COUNT)
+            throw new IllegalArgumentException("Batch count must be between 1 and 4096");
+        if (details.getOutputs().size() != 1)
             throw new IllegalArgumentException("Only patterns with one output are supported");
         for (var input : details.getInputs()) {
             for (var candidate : input.getPossibleInputs()) {

@@ -12,13 +12,6 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      # This API commit must be pushed before this development change is pushed.
-      - uses: actions/checkout@v4
-        with:
-          repository: GenichiMaruo/Singulo
-          ref: 466101f6de5d39288977bbe2e0ae2ee6c084a315
-          path: .ci/singulo
-          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,17 +20,16 @@ jobs:
         with:
           python-version: '3.12'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build pinned base API (not a publication artifact)
-        run: bash .ci/singulo/gradlew -p .ci/singulo --no-daemon jar
+      # Downloads AE2 19.2.19 and GuideME 21.1.1 and verifies their pinned SHA-256. The unreleased Singulo 0.19.0
+      # is fetched at its pinned commit from GitHub and built by the Gradle fetchDependencies task (not yet run in CI).
       - run: python3 tools/fetch_dependencies.py
       - name: Build and test the addon with real dependencies
         shell: bash
         run: |
           set -euo pipefail
-          args=(-PsinguloJar="$PWD/.ci/singulo/build/libs/Singulo-0.18.0-1.21.1N.jar" -Pae2Jar="$PWD/libs/appliedenergistics2-19.2.19.jar" -PguideMeJar="$PWD/libs/guideme-21.1.1.jar")
-          bash gradlew --no-daemon build "${args[@]}"
+          bash gradlew --no-daemon build
           python3 tools/check_distribution.py
-          bash gradlew --no-daemon runGameTestServer "${args[@]}" 2>&1 | tee build/integration-gametest.log
+          bash gradlew --no-daemon runGameTestServer 2>&1 | tee build/integration-gametest.log
           python3 tools/check_gametest_log.py build/integration-gametest.log
       - uses: actions/upload-artifact@v4
         with:
@@ -46,4 +38,3 @@ jobs:
             build/libs/Applied-Singulo-*.jar
             build/integration-gametest.log
           if-no-files-found: error
-# Local API commit dependency: this workflow has not yet run remotely.

@@ -26,3 +26,7 @@ with zipfile.ZipFile(root / "build/libs" / name) as z:
     for n in names:
         if n.endswith(".class"): assert int.from_bytes(z.read(n)[6:8], "big") == 65, n
 print(f"PASS: {name}; metadata, Java 21, no bundled dependencies")
+unreleased = [k for k, v in json.loads((root / "tools/dependencies.json").read_text()).items() if v.get("unreleased")]
+if unreleased:
+    print("NOT PUBLISHABLE: built against unreleased " + ", ".join(unreleased)
+          + "; pin the published release (URL + SHA-256) before any publication")

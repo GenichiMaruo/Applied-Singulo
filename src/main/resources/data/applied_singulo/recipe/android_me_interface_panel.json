@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "applied_singulo:android_me_interface"
+    }
+  ],
+  "result": {
+    "id": "applied_singulo:android_me_interface_panel",
+    "count": 1
+  }
+}

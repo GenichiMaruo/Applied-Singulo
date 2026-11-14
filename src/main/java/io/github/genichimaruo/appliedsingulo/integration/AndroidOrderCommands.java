@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceHost;
 import io.github.genichimaruo.singulo.api.android.AndroidOrders;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +40,13 @@ public final class AndroidOrderCommands {
                 .then(Commands.argument("console", BlockPosArgument.blockPos())
                     .then(Commands.argument("request", UuidArgument.uuid())
                         .executes(c -> action(c, "acknowledge")))))
+            .then(Commands.literal("snapshot")
+                .then(Commands.argument("console", BlockPosArgument.blockPos())
+                    .executes(AndroidOrderCommands::snapshot)))
+            .then(Commands.literal("interface")
+                .then(Commands.argument("interface", BlockPosArgument.blockPos())
+                    .then(Commands.literal("status").executes(c -> androidInterface(c, false)))
+                    .then(Commands.literal("cancel").executes(c -> androidInterface(c, true)))))
             .then(Commands.literal("newid").executes(c -> {
                 c.getSource().getPlayerOrException();
                 c.getSource().sendSuccess(() -> Component.literal(UUID.randomUUID().toString()), false);
@@ -48,11 +56,16 @@ public final class AndroidOrderCommands {
 
     private static BlockPos console(CommandContext<CommandSourceStack> context, ServerPlayer player)
             throws CommandSyntaxException {
-        var pos = BlockPosArgument.getLoadedBlockPos(context, "console");
+        return nearby(context, player, "console");
+    }
+
+    private static BlockPos nearby(CommandContext<CommandSourceStack> context, ServerPlayer player, String argument)
+            throws CommandSyntaxException {
+        var pos = BlockPosArgument.getLoadedBlockPos(context, argument);
         // Keep this manual development surface local; it never loads a distant chunk.
         if (player.distanceToSqr(pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5) > 64 * 64)
             throw new com.mojang.brigadier.exceptions.SimpleCommandExceptionType(
-                Component.literal("Console must be within 64 blocks")).create();
+                Component.literal("Target must be within 64 blocks")).create();
         return pos;
     }
 
@@ -87,6 +100,55 @@ public final class AndroidOrderCommands {
         return show(context.getSource(), action.equals("cancel")
             ? AndroidOrders.cancel(player.serverLevel(), pos, player.getUUID(), id)
             : AndroidOrders.status(player.serverLevel(), pos, player.getUUID(), id));
+    }
+
+    /** Owner-only overview of every external receipt on a console (Singulo 0.18.0 snapshot API). */
+    private static int snapshot(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        var player = context.getSource().getPlayerOrException();
+        var snap = AndroidOrders.snapshot(player.serverLevel(), console(context, player), player.getUUID());
+        var source = context.getSource();
+        if (snap.state() != AndroidOrders.SnapshotState.AVAILABLE) {
+            source.sendFailure(Component.literal("Snapshot " + snap.state()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("active=" + snap.activeCount() + " history=" + snap.historyCount()
+            + " capacity=" + snap.remainingReceiptCapacity() + "/" + snap.receiptCapacity()
+            + " maxCount=" + snap.maxRequestCount()), false);
+        for (var receipt : snap.receipts()) show(source, receipt);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /** Android ME Interfaces at a position: the block, or every interface panel on a cable there. */
+    private static java.util.List<AndroidInterfaceHost> interfacesAt(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos) {
+        var be = level.getBlockEntity(pos);
+        if (be instanceof AndroidInterfaceHost host) return java.util.List.of(host);
+        java.util.List<AndroidInterfaceHost> out = new java.util.ArrayList<>();
+        if (be instanceof appeng.api.parts.IPartHost parts)
+            for (var side : net.minecraft.core.Direction.values())
+                if (parts.getPart(side) instanceof AndroidInterfaceHost host) out.add(host);
+        return out;
+    }
+
+    private static int androidInterface(CommandContext<CommandSourceStack> context, boolean cancel) throws CommandSyntaxException {
+        var player = context.getSource().getPlayerOrException();
+        var pos = nearby(context, player, "interface");
+        var hosts = interfacesAt(player.serverLevel(), pos);
+        if (hosts.isEmpty()) {
+            context.getSource().sendFailure(Component.literal("No Android ME Interface at " + pos.toShortString()));
+            return 0;
+        }
+        for (var host : hosts) {
+            if (!host.logic().mayUse(player)) {
+                context.getSource().sendFailure(Component.translatable("message.applied_singulo.device.not_owner"));
+                continue;
+            }
+            if (cancel) {
+                int n = host.logic().cancelAll();
+                context.getSource().sendSuccess(() -> Component.translatable("message.applied_singulo.device.cancelled", n), false);
+            }
+            for (var line : host.logic().describe()) context.getSource().sendSuccess(() -> line, false);
+        }
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int show(CommandSourceStack source, AndroidOrders.Receipt receipt) {
