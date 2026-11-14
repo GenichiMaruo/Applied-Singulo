@@ -18,9 +18,8 @@ CDN file 9617080 and SHA-256 `ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39ae
 Those downloaded bytes match the actual successful Singulo CI 43628318212 JAR byte-for-byte.
 Tag v0.19.0 / commit `0f6fcff7645a2a5066a072acce55d4a03884080e` and tested CI commit have the same tree.
 
-The CF file was still Processing at verification. `unreleased: true` deliberately keeps Applied's release
-gate closed until general public availability is confirmed. This flag does not prevent hash-verified
-compatibility tests against the accepted CDN file.
+The CF file is now Approved and generally public. The dependency publication gate is open for
+preparing a CI receipt. This does not authorize publishing Applied Singulo itself.
 
 - Normal `./gradlew build` / `runGameTestServer` downloads and verifies all three pinned dependencies.
 - Local `-PsinguloJar` overrides remain for development only, not publication preparation.

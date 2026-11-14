@@ -25,7 +25,7 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 python3 tools/check_distribution.py # 配布 JAR 検査
 ```
 
-AE2・GuideME は `tools/dependencies.json` に固定した公式配布 URL から `libs/` へ自動ダウンロードされ、SHA-256 が一致しない JAR は削除して拒否します。未公開の Singulo 0.19.0 は、固定したコミットを `../Singulo`（なければ GitHub）から取り出して初回だけビルドします（[詳細](docs/development.md#singulo-dependency)）。依存 JAR は Git に含めず、アドオンにも同梱しません。
+AE2・GuideME は `tools/dependencies.json` に固定した公式配布 URL から `libs/` へ自動ダウンロードされ、SHA-256 が一致しない JAR は削除して拒否します。Singulo 0.19.0 も公開済み公式CF JARをSHA-256照合して取得します（[詳細](docs/development.md#singulo-dependency)）。依存 JAR は Git に含めず、アドオンにも同梱しません。
 
 手元でビルドした Singulo などを試すときは `-PsinguloJar=/path/Singulo.jar`（`-Pae2Jar` / `-PguideMeJar` も同様）で上書きできます。上書きした JAR はハッシュ検査されないため、公開前の検証には使わないでください。サーバーは `runServer`。初回 EULA は利用者が確認してください。
 
