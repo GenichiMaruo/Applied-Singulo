@@ -102,3 +102,12 @@ release boundary. Machine custody was subsequently rejected by Singulo's safety 
 omits processing recipes and locally rejects stale machine-only requests before transfer, returning
 all held inputs. The machine GameTest now verifies non-advertisement, no custody transfer, complete
 input refund and untouched furnace fuel. Plain crafting and fluid custody remain tested separately.
+
+## Tagged 0.19.0 base compatibility
+
+Singulo CI 43628318212 actual JAR, SHA-256
+`ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942`,
+was downloaded and verified. Its source tree matches tag v0.19.0 / merge
+`0f6fcff7645a2a5066a072acce55d4a03884080e`. Applied build, all 40 GameTests
+and distribution checks passed against those bytes. This used a local dependency override for
+compatibility testing only; final published URL/hash pinning and release-ready validation remain pending.

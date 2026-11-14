@@ -2,10 +2,10 @@
   "Singulo-0.19.0-1.21.1N.jar": {
     "property": "singuloJar",
     "unreleased": true,
-    "note": "Singulo 0.19.0 development API (AndroidEscrows private crafting custody, AndroidOrders.recipes, AndroidSharedStorage). Built from this exact commit; not a release, not hash-pinned. Replace with the published release URL and SHA-256 before publishing Applied Singulo.",
+    "note": "Tagged Singulo 0.19.0 source. CI run 43628318212 has the same tree and its tested JAR SHA-256 is ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942. Distribution URL is still pending: keep the publication gate closed until the published JAR and hash are verified.",
     "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "branch": "feature/0.19.0",
-    "commit": "d12d72c0b312931276b655bb30062a09be591502",
+    "branch": "1.21.1",
+    "commit": "0f6fcff7645a2a5066a072acce55d4a03884080e",
     "localClone": "../Singulo"
   },
   "appliedenergistics2-19.2.19.jar": {

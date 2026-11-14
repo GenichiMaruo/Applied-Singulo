@@ -13,7 +13,9 @@
 
 ## Singulo dependency
 
-Applied Singulo now requires **Singulo 0.19.0**, for the private crafting escrow (`AndroidEscrows`) and recipe snapshots (`AndroidOrders.recipes`). Singulo 0.19.0 is **not released yet**: `tools/dependencies.json` pins the development commit `d12d72c0...` (see `tools/dependencies.json`) instead of a download URL and hash. It is a commit on Singulo `feature/0.19.0` (pushed): the private escrow API plus the escrow trip-size fix, `AndroidSharedStorage`, multi-step escrow, the large-slot fetch fix and machine/fluid escrow.
+Applied Singulo requires **Singulo 0.19.0**, for private crafting escrow, recipe snapshots and shared-storage identity. The pinned source is tagged commit `0f6fcff7645a2a5066a072acce55d4a03884080e`. Its tree matches successful Singulo CI `43628318212` (`9eb8f4a7ebf43ee9f7ae7a41a7721d4b342c2fe4`). The actual CI JAR was downloaded and SHA-256 verified as `ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942` for compatibility testing.
+
+A generally published distribution URL is still pending. The dependency deliberately remains marked `unreleased` for the distribution gate; this is not a claim that the source tag is absent. Before release, replace the source pin with the verified published JAR URL and hash and rerun the checks. Do not publish Applied from a development override.
 
 - `./gradlew runClient` (or any build) runs `fetchDependencies`. It `git archive`s that exact commit from `../Singulo` when that clone has it, or fetches it from GitHub, builds it with Singulo's own wrapper into `libs/Singulo-0.19.0-1.21.1N.jar` (first run only, about 1-2 minutes), and records the commit in `libs/Singulo-0.19.0-1.21.1N.jar.commit`. The Singulo working tree and branches are never touched; changing the pinned commit rebuilds.
 - `-PsinguloJar=/path/Singulo.jar` still overrides it.
