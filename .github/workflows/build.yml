@@ -34,7 +34,11 @@ jobs:
           python3 tools/check_distribution.py --loader ${{ matrix.loader }}
           bash gradlew --no-daemon runGameTestServer -Ploader=${{ matrix.loader }} 2>&1 | tee build/${{ matrix.loader }}/integration-gametest.log
           python3 tools/check_gametest_log.py build/${{ matrix.loader }}/integration-gametest.log
-          python3 tools/prepare_release.py --loader ${{ matrix.loader }}
+          if python3 -c "import json,sys; p=json.load(open('tools/dependencies.json')); sys.exit(any(v.get('unreleased') or v.get('pending_public') for v in p.values() if v.get('loader','${{ matrix.loader }}')=='${{ matrix.loader }}'))"; then
+            python3 tools/prepare_release.py --loader ${{ matrix.loader }}
+          else
+            echo 'Release receipt skipped: dependency general-public gate remains closed'
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: applied-singulo-1.20.1-${{ matrix.loader }}-development

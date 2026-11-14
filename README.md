@@ -26,8 +26,8 @@ python3 tools/fetch_dependencies.py
 python3 tools/check_distribution.py --loader forge
 ```
 
-NeoForge は `-Ploader=neoforge` / `--loader neoforge` に置き換えます。
-開発用の未公開本体を使う間は各 Gradle コマンドに `-PsinguloJar=/path/Singulo-0.19.0-1.20.1F.jar`
+NeoForge は `-Ploader=neoforge` / `--loader neoforge` に置き換えます。同一作業ツリーで異なるloaderのビルドや実行を並行させず、一方のプロセスが終了してから切り替えてください（Gradleの古い出力清掃との競合回避）。
+検証用に別の本体を使う場合だけ各 Gradle コマンドに `-PsinguloJar=/path/Singulo-0.19.0-1.20.1F.jar`
 （NeoForge は末尾N）を追加してください。対象が異なる本体では起動検証できません。
 `runClient` / `runServer` も同じ loader と依存を指定します。依存JARをGitや配布JARに同梱しません。
 上書きJAR・未公開依存を使ったビルドは公開用の検証ではありません。

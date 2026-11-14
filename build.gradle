@@ -140,7 +140,13 @@ legacyForge {
     if (selectedLoader == 'forge') version = "${minecraft_version}-${selectedLoaderVersion}"
     else enable { neoForgeVersion = "${minecraft_version}-${selectedLoaderVersion}" }
     runs {
-        client { client() }
+        client {
+            client()
+            if (providers.gradleProperty('clientSmoke').isPresent()) {
+                gameDirectory = layout.buildDirectory.dir('client-smoke')
+                systemProperty 'applied_singulo.clientSmoke', 'true'
+            }
+        }
         server { server(); programArgument '--nogui' }
         gameTestServer {
             type = 'gameTestServer'

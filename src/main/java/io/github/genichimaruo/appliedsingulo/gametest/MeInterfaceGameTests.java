@@ -126,8 +126,7 @@ public final class MeInterfaceGameTests {
         data.recover(h.getLevel(), owner, pos, q);
         q.sendOutputs(sample -> ItemStack.EMPTY);
         try {
-            var load = OrphanedEscrows.class.getDeclaredMethod("load", net.minecraft.nbt.CompoundTag.class,
-                net.minecraft.core.HolderLookup.Provider.class);
+            var load = OrphanedEscrows.class.getDeclaredMethod("load", net.minecraft.nbt.CompoundTag.class);
             load.setAccessible(true);
             data = (OrphanedEscrows) load.invoke(null, tag);
         } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
@@ -279,7 +278,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(RACK, SinguloBlocks.ANDROID_RECIPE_RACK.get());
         h.setBlock(TABLE, tableBlock);
         ((ChestBlockEntity) h.getBlockEntity(CHEST)).setItem(0, new ItemStack(Items.OAK_LOG, 32));
-        var player = h.makeMockServerPlayerInLevel();
+        var player = LegacyTestPlayers.create(h);
         WorkConsoleBlockEntity console = (WorkConsoleBlockEntity) h.getBlockEntity(CONSOLE);
         console.setOwner(player.getUUID());
         var link = new ItemStack(singulo("work_location_card"));
@@ -683,7 +682,7 @@ public final class MeInterfaceGameTests {
         BlockPos bus = SUPPLY.above(), drive = bus.east(), power = drive.above();
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
-        var player = h.makeMockServerPlayerInLevel();
+        var player = LegacyTestPlayers.create(h);
         var level = h.getLevel();
         appeng.api.parts.PartHelper.setPart(level, h.absolutePos(bus), null, player,
             appeng.core.definitions.AEParts.GLASS_CABLE.item(appeng.api.util.AEColor.TRANSPARENT));
@@ -740,7 +739,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
-        var player = h.makeMockServerPlayerInLevel();
+        var player = LegacyTestPlayers.create(h);
         me.queue().setOwner(player.getUUID());
         var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");

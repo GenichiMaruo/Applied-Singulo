@@ -14,7 +14,6 @@ import javax.annotation.Nullable;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -59,7 +58,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
                 AEKey key = fluid.isEmpty() ? AEItemKey.of(option) : appeng.api.stacks.AEFluidKey.of(fluid);
                 if (key == null || keys.contains(key)) continue;
                 keys.add(key);
-                options.add(StringTag.valueOf(key.getId() + ((key instanceof AEItemKey itemKey && itemKey.hasTag()) ? "#" + key.hashCode() : "")));
+                options.add(key.toTagGeneric());
             }
             if (keys.isEmpty() || in.count() <= 0) return null;
             var entry = new CompoundTag();

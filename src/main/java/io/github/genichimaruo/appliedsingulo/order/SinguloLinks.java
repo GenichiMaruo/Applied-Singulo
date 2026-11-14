@@ -4,9 +4,7 @@ import io.github.genichimaruo.singulo.android.work.WorkLocationCardItem;
 import io.github.genichimaruo.singulo.api.android.AndroidOrders;
 import io.github.genichimaruo.singulo.api.android.AndroidRecipe;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -21,10 +19,7 @@ import net.minecraft.world.level.Level;
  * by clicking it with a card that recorded that console.
  */
 public final class SinguloLinks {
-    private static long ceilDiv(long numerator, long denominator) {
-        long quotient = Math.floorDiv(numerator, denominator);
-        return numerator % denominator == 0 ? quotient : Math.addExact(quotient, 1);
-    }
+    private static long ceilDiv(long n, long d) { return Math.floorDiv(n, d) + (n % d == 0 ? 0 : 1); }
     private SinguloLinks() { }
 
     /** Null when {@code owner} may order from the console; otherwise why not (public snapshot API). */
@@ -105,12 +100,12 @@ public final class SinguloLinks {
     public static List<PatternRecipe> patternRecipes(List<AndroidRecipe> all) {
         List<AndroidRecipe> eligible = all.stream().filter(SinguloLinks::escrowEligible).toList();
         List<PatternRecipe> chains = new ArrayList<>(), steps = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
+        // Full-key deduplication is performed by AndroidRecipePattern, not display strings.
         for (var recipe : eligible) {
             var chain = chain(recipe, eligible);
-            if (chain != null && seen.add(chain.toString())) chains.add(chain);
+            if (chain != null) chains.add(chain);
             var step = convert(recipe);
-            if (step != null && seen.add(step.toString())) steps.add(step);
+            if (step != null) steps.add(step);
         }
         chains.addAll(steps);
         return chains;
@@ -142,8 +137,8 @@ public final class SinguloLinks {
     public static PatternRecipe chain(AndroidRecipe recipe, List<AndroidRecipe> eligible) {
         var top = convert(recipe);
         if (top == null) return null;
-        java.util.LinkedHashMap<String, Frac> needs = new java.util.LinkedHashMap<>();
-        java.util.Map<String, List<ItemStack>> leaves = new java.util.HashMap<>();
+        java.util.LinkedHashMap<List<appeng.api.stacks.AEKey>, Frac> needs = new java.util.LinkedHashMap<>();
+        java.util.Map<List<appeng.api.stacks.AEKey>, List<ItemStack>> leaves = new java.util.HashMap<>();
         boolean[] expanded = { false };
         long multiplier = 1;
         List<RecipeInput> inputs = new ArrayList<>();
@@ -170,7 +165,7 @@ public final class SinguloLinks {
     }
 
     private static void expand(AndroidRecipe recipe, Frac crafts, List<AndroidRecipe> eligible, List<AndroidRecipe> path,
-                               java.util.Map<String, Frac> needs, java.util.Map<String, List<ItemStack>> leaves, boolean[] expanded) {
+                               java.util.Map<List<appeng.api.stacks.AEKey>, Frac> needs, java.util.Map<List<appeng.api.stacks.AEKey>, List<ItemStack>> leaves, boolean[] expanded) {
         path.add(recipe);
         for (var m : recipe.materials()) {
             if (m.count() <= 0) continue;
@@ -184,27 +179,29 @@ public final class SinguloLinks {
             List<ItemStack> options = new ArrayList<>();
             if (!m.ingredientJson().isEmpty()) for (var o : m.alternatives()) if (!o.isEmpty()) options.add(o.copyWithCount(1));
             if (options.isEmpty()) options.add(m.sample().copyWithCount(1));
-            StringBuilder key = new StringBuilder();
-            for (var o : options) key.append(materialKey(o)).append('|');
-            leaves.putIfAbsent(key.toString(), options);
-            needs.merge(key.toString(), need, Frac::plus);
+            var key = options.stream().map(SinguloLinks::materialKey).toList();
+            leaves.putIfAbsent(key, options);
+            needs.merge(key, need, Frac::plus);
         }
-        path.removeLast();
+        path.remove(path.size() - 1);
     }
 
     /** The first eligible recipe (rack order) whose product is {@code item} and that is not already on the path. */
     @Nullable
     private static AndroidRecipe producer(ItemStack item, List<AndroidRecipe> eligible, List<AndroidRecipe> path) {
         for (var r : eligible)
-            if (!path.contains(r) && ItemStack.isSameItemSameTags(r.outputs().get(0).sample(), item)) return r;
+            if (!path.contains(r) && java.util.Objects.equals(materialKey(r.outputs().get(0).sample()), materialKey(item))) return r;
         return null;
     }
 
     /** Mode name of Singulo's ordinary crafting recipes (RecipeData.MODE_CRAFTING). */
     public static final String MODE_CRAFTING = "crafting";
 
-    /** Plain crafting (including supported fluid samples) only. Machine/procedure, fuel, catalysts and chemicals
-     * are not advertised: a recipe snapshot does not guarantee private escrow support. */
+    /**
+     * Whether Singulo's private crafting escrow can run the recipe. Only plain crafting (including
+     * supported fluid samples) is permitted. Machine/procedure steps, fuel, catalysts and chemicals
+     * are not offered to AE2: a recipe snapshot is not an escrow capability guarantee.
+     */
     public static boolean escrowEligible(AndroidRecipe recipe) {
         if (!MODE_CRAFTING.equals(recipe.mode()) || recipe.fuelFill()
                 || recipe.outputs().isEmpty() || recipe.materials().isEmpty())
@@ -225,12 +222,9 @@ public final class SinguloLinks {
     }
 
     /** Stable identity of a material option: the fluid for fluid samples, otherwise item and components. */
-    static String materialKey(ItemStack o) {
+    static appeng.api.stacks.AEKey materialKey(ItemStack o) {
         var fluid = io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidOf(o);
-        if (!fluid.isEmpty()) return "fluid:" + net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid.getFluid())
-            + (!fluid.hasTag() ? "" : "#" + fluid.getTag().hashCode());
-        return net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(o.getItem())
-            + (!o.hasTag() ? "" : "#" + o.getTag().hashCode());
+        return fluid.isEmpty() ? appeng.api.stacks.AEItemKey.of(o) : appeng.api.stacks.AEFluidKey.of(fluid);
     }
 
     /** Whether the console has an escrow-eligible recipe whose product is {@code target}. */
