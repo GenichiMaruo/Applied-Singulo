@@ -28,3 +28,12 @@ No AI image generation or copied AE2 logo was used. Packaging checks verify exac
 - Duplicate stock slots use the largest target for a key, not independent jobs.
 - Before submitting a calculated plan, current grid, inventory and outstanding requests are checked again.
 - Stale calculations are cancelled after config changes, unload or deficit changes.
+
+## Escrow capability boundary
+
+Recipe snapshots may include machine/processing recipes that private escrow cannot safely run. These
+are deliberately omitted from AE2 patterns. A queued stale machine pattern is rejected locally and
+its held inputs refunded before calling Singulo's custody API. Plain crafting (including supported
+fluid samples) remains eligible; machine automation is not claimed as a supported beta feature.
+
+The fluid-removal regression includes a SavedData save/load round trip before owner recovery.

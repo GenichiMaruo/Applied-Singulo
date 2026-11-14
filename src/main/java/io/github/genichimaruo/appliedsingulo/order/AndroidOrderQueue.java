@@ -170,6 +170,20 @@ public final class AndroidOrderQueue {
     }
 
     private void submit(ServerLevel level, OrderJob job, long now) {
+        var snapshot = AndroidOrders.recipes(level, job.console, owner);
+        if (snapshot.state() == AndroidOrders.SnapshotState.AVAILABLE) {
+            var matching = snapshot.recipes().stream().filter(r -> !r.outputs().isEmpty()
+                && ItemStack.isSameItemSameComponents(r.outputs().getFirst().sample(), job.target())).toList();
+            if (!matching.isEmpty() && matching.stream().noneMatch(SinguloLinks::escrowEligible)) {
+                // A rack may have changed since AE2 obtained the pattern. Return held inputs before any transfer.
+                job.state = OrderJob.State.FAILED;
+                job.reason = "unsupported_escrow_recipe";
+                job.finishedAt = now;
+                returnHeld(job);
+                changed.run();
+                return;
+            }
+        }
         var offer = job.heldMaterials();
         var result = AndroidEscrows.submit(level, job.console, owner, job.request, job.target(), job.count, offer, null);
         var receipt = result.receipt();

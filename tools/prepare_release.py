@@ -4,9 +4,14 @@ import hashlib
 import json
 import subprocess
 import sys
+import argparse
 
 root = Path(__file__).resolve().parents[1]
+args = argparse.ArgumentParser()
+args.add_argument("--gametest-log", type=Path, default=root / "build/integration-gametest.log")
+options = args.parse_args()
 subprocess.run([sys.executable, str(root / "tools/check_distribution.py")], check=True)
+subprocess.run([sys.executable, str(root / "tools/check_gametest_log.py"), str(options.gametest_log)], check=True)
 pins = json.loads((root / "tools/dependencies.json").read_text())
 verified = {}
 for name, pin in pins.items():
