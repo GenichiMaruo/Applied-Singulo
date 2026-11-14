@@ -203,13 +203,10 @@ public final class SinguloLinks {
     /** Mode name of Singulo's ordinary crafting recipes (RecipeData.MODE_CRAFTING). */
     public static final String MODE_CRAFTING = "crafting";
 
-    /**
-     * Whether Singulo's private crafting escrow can run the recipe: one ordinary crafting step with item
-     * inputs only. Processing, procedures, fuel, catalysts and liquids are rejected by AndroidEscrows (they
-     * would need shared machines or stock), so they are not offered to AE2.
-     */
+    /** Plain crafting (including supported fluid samples) only. Machine/procedure, fuel, catalysts and chemicals
+     * are not advertised: a recipe snapshot does not guarantee private escrow support. */
     public static boolean escrowEligible(AndroidRecipe recipe) {
-        if (!(MODE_CRAFTING.equals(recipe.mode()) || MODE_PROCESSING.equals(recipe.mode())) || recipe.fuelFill()
+        if (!MODE_CRAFTING.equals(recipe.mode()) || recipe.fuelFill()
                 || recipe.outputs().isEmpty() || recipe.materials().isEmpty())
             return false;
         if (recipe.outputs().get(0).liquid()) return false;   // AE2 asks for the main product; it must be an item

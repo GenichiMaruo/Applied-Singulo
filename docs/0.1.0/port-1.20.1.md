@@ -33,3 +33,12 @@ AE2公式JAR SHA-256:
 参考:
 - https://github.com/AppliedEnergistics/Applied-Energistics-2/tree/forge/v15.4.12
 - https://github.com/neoforged/ModDevGradle/blob/main/LEGACY.md
+
+## 本体の材料隔離制限（6254d2同期）
+
+機械のprocessing工程は、レシピ一覧で取得できても私有材料の受付対象ではありません。
+AE2へ提示するのは通常crafting工程のみです。対応する流体サンプルは本体の契約内で使用できますが、
+燃料・触媒・化学物質・手順/機械工程は提示しません。
+提示後にラックが機械レシピへ変更された場合も、本体へ材料を渡す前に失敗扱いにして預かった材料を返します。
+旧「機械工程成功」テストは非表示・custody UNKNOWN・原鉄2個返却・燃料不消費の検証へ置換しました。
+このテストを含む41件のlegacy実行は本体JAR待ちです。共通文書の成功記録は1.21.1版の履歴です。

@@ -94,3 +94,11 @@ Implement durable bridge identity and a material reservation/return contract bef
 ## Update: emitter, monitor, keep in stock, machines and fluids
 - New addon GameTests (30/30 total): status emitter follows the network (stuck without console, quiet once set); order monitor shows a batching order; keep in stock with a real crafting CPU and android makes planks until ME holds 8 (setting persists); a real android smelts raw iron in a furnace through the interface queue; AE2 fluid inputs become Singulo fluid samples, batch by amount, and claimed fluids reach an ME fluid cell.
 - Singulo: escrow requests may run machine steps and carry fluids (custody keeps one sample per fluid in mB; tanks fetch from and return to custody; partial claims in mB; cancelled workers return tank fluids). New Singulo GameTests: a real android runs a furnace step in private custody; custody keeps fluid amounts.
+
+## Review correction: private escrow capability boundary
+
+The earlier machine/furnace success notes describe the development implementation, not the supported
+release boundary. Machine custody was subsequently rejected by Singulo's safety review. Applied now
+omits processing recipes and locally rejects stale machine-only requests before transfer, returning
+all held inputs. The machine GameTest now verifies non-advertisement, no custody transfer, complete
+input refund and untouched furnace fuel. Plain crafting and fluid custody remain tested separately.

@@ -211,15 +211,18 @@ public final class MeInterfaceGameTests {
         var withAlt = SinguloLinks.convert(new AndroidRecipe("crafting", pos, stone, List.of(alt), false));
         h.assertTrue(withAlt != null && withAlt.inputs().get(0).options().size() == 2, "Alternatives become AE2 options");
 
-        // Machine (processing) recipes are exported now; their fluid inputs become AE2 fluid inputs (mB).
-        var water = io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
+        // Processing snapshots are NOT proof that private escrow can own a machine's outputs.
+        var water = AndroidEscrows.fluidSample(
             new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1));
-        var machine = SinguloLinks.convert(new AndroidRecipe("processing", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 1),
-            new AndroidRecipe.Material(water, 250, List.of(water), "", false, false, true)), false));
-        h.assertTrue(machine != null && machine.inputs().size() == 2, "Machine recipe with a fluid exported: " + machine);
-        var machinePattern = AndroidRecipePattern.of(machine);
-        h.assertTrue(machinePattern != null && java.util.Arrays.stream(machinePattern.getInputs()).anyMatch(in ->
-            in.getPossibleInputs()[0].what() instanceof appeng.api.stacks.AEFluidKey && in.getMultiplier() == 250), "Fluid input of 250 mB");
+        var machine = new AndroidRecipe("processing", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 1),
+            new AndroidRecipe.Material(water, 250, List.of(water), "", false, false, true)), false);
+        h.assertTrue(SinguloLinks.convert(machine) == null && SinguloLinks.patternRecipes(List.of(machine)).isEmpty(),
+            "Machine recipes must never be advertised as runnable escrow patterns");
+        var fluidCrafting = SinguloLinks.convert(new AndroidRecipe("crafting", pos, stone, machine.materials(), false));
+        var fluidPattern = AndroidRecipePattern.of(fluidCrafting);
+        h.assertTrue(fluidPattern != null && java.util.Arrays.stream(fluidPattern.getInputs()).anyMatch(in ->
+            in.getPossibleInputs()[0].what() instanceof appeng.api.stacks.AEFluidKey && in.getMultiplier() == 250),
+            "Plain crafting fluid inputs keep their 250 mB identity");
         h.assertTrue(SinguloLinks.convert(new AndroidRecipe("processing", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 1),
             new AndroidRecipe.Material(new ItemStack(Items.COAL), 1, List.of(), "", false, true, false)), false)) == null,
             "Machine recipes with fuel: not exported (fuel would come from shared stock)");
@@ -852,7 +855,7 @@ public final class MeInterfaceGameTests {
 
     /** Machine recipe through the interface queue: a real android smelts the batch in a (pre-fuelled) furnace. */
     @GameTest(template = "empty", timeoutTicks = 4800)
-    public static void interfaceRunsMachineRecipesInPrivateCustody(GameTestHelper h) {
+    public static void interfaceRejectsMachineRecipesBeforeMaterialTransfer(GameTestHelper h) {
         var console = workshop(h, true);
         BlockPos furnacePos = new BlockPos(5, 1, 3);
         h.setBlock(furnacePos, Blocks.FURNACE);
@@ -867,16 +870,22 @@ public final class MeInterfaceGameTests {
         RecipeData.processing(grid, new ItemStack(Items.IRON_INGOT), List.of(), ItemStack.EMPTY).write(recipe, h.getLevel().registryAccess());
         rack.items().setStackInSlot(RecipeRackBlockEntity.COLS + 1, recipe);
         var me = remoteInterface(h, console);
-        h.startSequence()
-            .thenWaitUntil(() -> h.assertTrue(me.patterns().stream().anyMatch(p -> p.output().is(Items.IRON_INGOT)),
-                "Furnace recipe shared as an AE2 pattern"))
-            .thenExecute(() -> h.assertTrue(me.queue().accept(new ItemStack(Items.IRON_INGOT), 2, List.of(new ItemStack(Items.RAW_IRON, 2)),
-                console.getBlockPos(), h.getLevel().getGameTime() - 200), "push"))
-            .thenWaitUntil(() -> {
-                h.assertTrue(me.queue().jobs().isEmpty(), "Open: " + me.queue().jobs());
-                h.assertTrue(count(me.queue().outputContents(), Items.IRON_INGOT) == 2, "Ingots: " + me.queue().outputContents());
-            })
-            .thenSucceed();
+        me.logic().refreshPatterns();
+        h.assertTrue(me.patterns().stream().noneMatch(p -> p.output().is(Items.IRON_INGOT)),
+            "Machine outputs are not advertised to AE2");
+        long now = h.getLevel().getGameTime();
+        h.assertTrue(me.queue().accept(new ItemStack(Items.IRON_INGOT), 2, List.of(new ItemStack(Items.RAW_IRON, 2)),
+            console.getBlockPos(), now - 200), "Simulate an obsolete pattern already holding inputs");
+        var request = me.queue().jobs().get(0).request;
+        me.queue().tick(h.getLevel(), now, 0);
+        h.assertTrue(AndroidEscrows.snapshot(h.getLevel(), console.owner(), request).phase() == AndroidEscrows.Phase.UNKNOWN,
+            "Unsupported order rejected before any Singulo custody transfer");
+        h.assertTrue(count(me.queue().outputContents(), Items.RAW_IRON) == 2,
+            "Both input items returned unchanged");
+        h.assertTrue(count(me.queue().outputContents(), Items.IRON_INGOT) == 0, "No product manufactured");
+        h.assertTrue(((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getBlockEntity(furnacePos))
+            .getItem(1).getCount() == 8, "Machine fuel untouched");
+        h.succeed();
     }
 
     /** AE2 fluid inputs become Singulo fluid samples, batch by amount, and claimed fluids go back into ME as fluids. */
