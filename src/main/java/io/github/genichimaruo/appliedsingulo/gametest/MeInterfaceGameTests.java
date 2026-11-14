@@ -394,10 +394,12 @@ public final class MeInterfaceGameTests {
         var materials = List.of(new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 64), new ItemStack(Items.OAK_PLANKS, 8),
             new ItemStack(Items.STICK, 64), new ItemStack(Items.STICK, 4));
         h.assertTrue(me.queue().accept(new ItemStack(Items.OAK_FENCE), 102, materials, console.getBlockPos(), now - 200), "push");
+        var request = me.queue().jobs().get(0);
         h.succeedWhen(() -> {
             h.assertTrue(me.queue().jobs().isEmpty(), "Request still open: " + me.queue().jobs());
             h.assertTrue(count(me.queue().outputContents(), Items.OAK_FENCE) == 102,
-                "All 102 fences claimed: " + count(me.queue().outputContents(), Items.OAK_FENCE));
+                "All 102 fences claimed: " + count(me.queue().outputContents(), Items.OAK_FENCE) + "; " + request
+                    + "; buffers=" + me.queue().outputContents());
         });
     }
 

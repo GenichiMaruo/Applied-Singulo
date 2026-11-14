@@ -7,7 +7,7 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 ## 必須環境
 
 - Minecraft **1.20.1** / Forge **47.4.26+** または NeoForge **47.1.106+** / Java **17**
-- **Singulo 0.19.0 (0.19.x)** — 0.19.0 の個別預かり API `AndroidEscrows` を使います。**0.19.0 は未公開**のため、現在は開発版のコミットから自動ビルドして使います。Singulo 0.19.0 が公開されるまで Applied Singulo も公開できません。
+- **Singulo 0.19.0 (0.19.x)**。公式成功CI・CF公開ファイルと同じJARをURL/SHA-256で固定しています。Applied Singulo自体は未公開です。
 - **AE2 Forge 15.4.12+ (15.x)**。GuideME **20.1.7+ (20.1.x)** も必須です（AE2実JARの依存指定）。
 
 ## 命名・ブランチ
