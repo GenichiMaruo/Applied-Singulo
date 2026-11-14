@@ -11,13 +11,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 /**
@@ -30,7 +28,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
     private final ItemStack output;
     private final int outputCount;
     private final IInput[] inputs;
-    private final List<GenericStack> outputs;
+    private final GenericStack[] outputs;
     private final boolean chained;
 
     private AndroidRecipePattern(AEItemKey definition, ItemStack output, int outputCount, IInput[] inputs, boolean chained) {
@@ -39,14 +37,14 @@ public final class AndroidRecipePattern implements IPatternDetails {
         this.output = output.copyWithCount(1);
         this.outputCount = outputCount;
         this.inputs = inputs;
-        this.outputs = List.of(new GenericStack(AEItemKey.of(output), outputCount));
+        this.outputs = new GenericStack[] { new GenericStack(AEItemKey.of(output), outputCount) };
     }
 
     /** Null when the recipe cannot be represented exactly (output with data components, zero amounts). */
     @Nullable
     public static AndroidRecipePattern of(SinguloLinks.PatternRecipe recipe) {
         var outputKey = AEItemKey.of(recipe.output());
-        if (outputKey == null || outputKey.hasComponents() || recipe.outputCount() <= 0) return null;
+        if (outputKey == null || outputKey.hasTag() || recipe.outputCount() <= 0) return null;
         var description = new CompoundTag();
         description.putString("output", outputKey.getId().toString());
         description.putInt("outputCount", recipe.outputCount());
@@ -61,7 +59,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
                 AEKey key = fluid.isEmpty() ? AEItemKey.of(option) : appeng.api.stacks.AEFluidKey.of(fluid);
                 if (key == null || keys.contains(key)) continue;
                 keys.add(key);
-                options.add(StringTag.valueOf(key.getId() + (key.hasComponents() ? "#" + key.hashCode() : "")));
+                options.add(StringTag.valueOf(key.getId() + ((key instanceof AEItemKey itemKey && itemKey.hasTag()) ? "#" + key.hashCode() : "")));
             }
             if (keys.isEmpty() || in.count() <= 0) return null;
             var entry = new CompoundTag();
@@ -73,8 +71,8 @@ public final class AndroidRecipePattern implements IPatternDetails {
         if (inputs.isEmpty()) return null;
         description.put("inputs", inputList);
         var stack = new ItemStack(ModContent.ANDROID_RECIPE_PATTERN.get());
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(description));
-        stack.set(DataComponents.CUSTOM_NAME, recipe.output().getHoverName().copy());
+        stack.setTag(description);
+        stack.setHoverName(recipe.output().getHoverName().copy());
         return new AndroidRecipePattern(AEItemKey.of(stack), recipe.output(), recipe.outputCount(), inputs.toArray(IInput[]::new), recipe.chained());
     }
 
@@ -85,7 +83,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
 
     @Override public AEItemKey getDefinition() { return definition; }
     @Override public IInput[] getInputs() { return inputs; }
-    @Override public List<GenericStack> getOutputs() { return outputs; }
+    @Override public GenericStack[] getOutputs() { return outputs; }
 
     @Override public boolean equals(Object o) { return o instanceof AndroidRecipePattern p && p.definition.equals(definition); }
     @Override public int hashCode() { return definition.hashCode(); }

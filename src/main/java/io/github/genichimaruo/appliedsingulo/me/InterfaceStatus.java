@@ -3,7 +3,7 @@ package io.github.genichimaruo.appliedsingulo.me;
 import appeng.menu.guisync.PacketWritable;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * Everything the status screen shows, built on the server and synchronised as one value (AE2 {@code @GuiSync}).
@@ -43,14 +43,14 @@ public record InterfaceStatus(Link link, int priority, String console, String co
         stock = List.copyOf(stock);
     }
 
-    public InterfaceStatus(RegistryFriendlyByteBuf buf) {
+    public InterfaceStatus(FriendlyByteBuf buf) {
         this(buf.readEnum(Link.class), buf.readVarInt(), buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(),
             readJobs(buf), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
             buf.readVarInt(), buf.readBoolean(), buf.readUtf(), readPushes(buf), readStacks(buf), readStock(buf));
     }
 
     @Override
-    public void writeToPacket(RegistryFriendlyByteBuf buf) {
+    public void writeToPacket(FriendlyByteBuf buf) {
         buf.writeEnum(link);
         buf.writeVarInt(priority);
         buf.writeUtf(console);
@@ -96,7 +96,7 @@ public record InterfaceStatus(Link link, int priority, String console, String co
         }
     }
 
-    private static List<Job> readJobs(RegistryFriendlyByteBuf buf) {
+    private static List<Job> readJobs(FriendlyByteBuf buf) {
         int n = buf.readVarInt();
         List<Job> out = new ArrayList<>(n);
         for (int i = 0; i < n; i++)
@@ -105,21 +105,21 @@ public record InterfaceStatus(Link link, int priority, String console, String co
         return out;
     }
 
-    private static List<Stock> readStock(RegistryFriendlyByteBuf buf) {
+    private static List<Stock> readStock(FriendlyByteBuf buf) {
         int n = buf.readVarInt();
         List<Stock> out = new ArrayList<>(n);
         for (int i = 0; i < n; i++) out.add(new Stock(buf.readUtf(), buf.readVarLong(), buf.readVarLong(), buf.readUtf()));
         return out;
     }
 
-    private static List<Stack> readStacks(RegistryFriendlyByteBuf buf) {
+    private static List<Stack> readStacks(FriendlyByteBuf buf) {
         int n = buf.readVarInt();
         List<Stack> out = new ArrayList<>(n);
         for (int i = 0; i < n; i++) out.add(new Stack(buf.readUtf(), buf.readVarLong()));
         return out;
     }
 
-    private static List<Push> readPushes(RegistryFriendlyByteBuf buf) {
+    private static List<Push> readPushes(FriendlyByteBuf buf) {
         int n = buf.readVarInt();
         List<Push> out = new ArrayList<>(n);
         for (int i = 0; i < n; i++) out.add(new Push(buf.readUtf(), buf.readBoolean(), buf.readVarInt()));

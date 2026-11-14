@@ -21,6 +21,10 @@ import net.minecraft.world.level.Level;
  * by clicking it with a card that recorded that console.
  */
 public final class SinguloLinks {
+    private static long ceilDiv(long numerator, long denominator) {
+        long quotient = Math.floorDiv(numerator, denominator);
+        return numerator % denominator == 0 ? quotient : Math.addExact(quotient, 1);
+    }
     private SinguloLinks() { }
 
     /** Null when {@code owner} may order from the console; otherwise why not (public snapshot API). */
@@ -150,7 +154,7 @@ public final class SinguloLinks {
             if (multiplier > MAX_CHAIN_MULTIPLIER) multiplier = 1;
             for (var e : needs.entrySet()) {
                 var f = e.getValue();
-                long count = Math.ceilDiv(Math.multiplyExact(f.num(), multiplier), f.den());
+                long count = ceilDiv(Math.multiplyExact(f.num(), multiplier), f.den());
                 if (count > 0) inputs.add(new RecipeInput(leaves.get(e.getKey()), count));
             }
         } catch (ArithmeticException overflow) {
@@ -161,7 +165,7 @@ public final class SinguloLinks {
         // A cycle (e.g. ingot <-> block) could end at the product itself; such a pattern would consume its own output.
         for (var in : inputs)
             for (var option : in.options())
-                if (ItemStack.isSameItemSameComponents(option, top.output())) return null;
+                if (ItemStack.isSameItemSameTags(option, top.output())) return null;
         return new PatternRecipe(top.output(), (int) out, inputs, true);
     }
 
@@ -174,7 +178,7 @@ public final class SinguloLinks {
             AndroidRecipe sub = m.ingredientJson().isEmpty() && path.size() < MAX_CHAIN_DEPTH ? producer(m.sample(), eligible, path) : null;
             if (sub != null) {
                 expanded[0] = true;
-                expand(sub, need.div(sub.outputs().getFirst().count()), eligible, path, needs, leaves, expanded);
+                expand(sub, need.div(sub.outputs().get(0).count()), eligible, path, needs, leaves, expanded);
                 continue;
             }
             List<ItemStack> options = new ArrayList<>();
@@ -192,7 +196,7 @@ public final class SinguloLinks {
     @Nullable
     private static AndroidRecipe producer(ItemStack item, List<AndroidRecipe> eligible, List<AndroidRecipe> path) {
         for (var r : eligible)
-            if (!path.contains(r) && ItemStack.isSameItemSameComponents(r.outputs().getFirst().sample(), item)) return r;
+            if (!path.contains(r) && ItemStack.isSameItemSameTags(r.outputs().get(0).sample(), item)) return r;
         return null;
     }
 
@@ -208,7 +212,7 @@ public final class SinguloLinks {
         if (!(MODE_CRAFTING.equals(recipe.mode()) || MODE_PROCESSING.equals(recipe.mode())) || recipe.fuelFill()
                 || recipe.outputs().isEmpty() || recipe.materials().isEmpty())
             return false;
-        if (recipe.outputs().getFirst().liquid()) return false;   // AE2 asks for the main product; it must be an item
+        if (recipe.outputs().get(0).liquid()) return false;   // AE2 asks for the main product; it must be an item
         for (var p : recipe.outputs()) if (p.liquid() && !isFluid(p.sample())) return false;   // no chemicals
         for (var m : recipe.materials())
             if (m.fuel() || m.catalyst() || m.liquid() && !isFluid(m.sample())) return false;
@@ -227,16 +231,16 @@ public final class SinguloLinks {
     static String materialKey(ItemStack o) {
         var fluid = io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidOf(o);
         if (!fluid.isEmpty()) return "fluid:" + net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid.getFluid())
-            + (fluid.getComponentsPatch().isEmpty() ? "" : "#" + fluid.getComponentsPatch().hashCode());
+            + (!fluid.hasTag() ? "" : "#" + fluid.getTag().hashCode());
         return net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(o.getItem())
-            + (o.getComponentsPatch().isEmpty() ? "" : "#" + o.getComponentsPatch().hashCode());
+            + (!o.hasTag() ? "" : "#" + o.getTag().hashCode());
     }
 
     /** Whether the console has an escrow-eligible recipe whose product is {@code target}. */
     public static boolean hasEscrowRecipe(ServerLevel level, BlockPos console, UUID owner, ItemStack target) {
         var snapshot = AndroidOrders.recipes(level, console, owner);
         return snapshot.state() == AndroidOrders.SnapshotState.AVAILABLE && snapshot.recipes().stream().anyMatch(r ->
-            escrowEligible(r) && ItemStack.isSameItemSameComponents(r.outputs().getFirst().sample(), target));
+            escrowEligible(r) && ItemStack.isSameItemSameTags(r.outputs().get(0).sample(), target));
     }
 
     /**
@@ -246,7 +250,7 @@ public final class SinguloLinks {
     @Nullable
     public static PatternRecipe convert(AndroidRecipe recipe) {
         if (!escrowEligible(recipe)) return null;
-        var main = recipe.outputs().getFirst();
+        var main = recipe.outputs().get(0);
         var output = main.sample();
         if (main.liquid() || output.isEmpty() || main.count() <= 0 || main.count() > Integer.MAX_VALUE) return null;
         List<RecipeInput> inputs = new ArrayList<>();

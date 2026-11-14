@@ -20,7 +20,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * Interfaces on its ME network: product icon, progress and the number of orders. Red text when something is stuck.
  */
 public final class AndroidOrderMonitorPart extends AEBasePart implements IGridTickable {
-    private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(AppliedSingulo.MOD_ID,
+    private static final ResourceLocation MODEL = new ResourceLocation(AppliedSingulo.MOD_ID,
         "part/android_order_monitor");
     public static final List<ResourceLocation> MODELS = List.of(MODEL);
     private record Models(List<ResourceLocation> getModels) implements IPartModel { }
@@ -54,7 +54,7 @@ public final class AndroidOrderMonitorPart extends AEBasePart implements IGridTi
         }
     }
 
-    @Override public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(10, 10, false); }
+    @Override public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(10, 10, false, false); }
 
     @Override
     public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
@@ -65,7 +65,7 @@ public final class AndroidOrderMonitorPart extends AEBasePart implements IGridTi
     // ------------------------------------------------------------------ sync
 
     @Override
-    public void writeToStream(RegistryFriendlyByteBuf data) {
+    public void writeToStream(FriendlyByteBuf data) {
         super.writeToStream(data);
         data.writeVarInt(shown.interfaces());
         data.writeVarInt(shown.running());
@@ -77,7 +77,7 @@ public final class AndroidOrderMonitorPart extends AEBasePart implements IGridTi
     }
 
     @Override
-    public boolean readFromStream(RegistryFriendlyByteBuf data) {
+    public boolean readFromStream(FriendlyByteBuf data) {
         boolean changed = super.readFromStream(data);
         var next = new NetworkOrders(data.readVarInt(), data.readVarInt(), data.readVarInt(), data.readBoolean(),
             data.readUtf(), data.readVarLong(), data.readVarLong());

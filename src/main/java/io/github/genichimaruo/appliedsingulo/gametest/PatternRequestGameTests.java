@@ -11,14 +11,17 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder("applied_singulo")
 @PrefixGameTestTemplate(false)
 public final class PatternRequestGameTests {
+    private static ItemStack processing(List<GenericStack> inputs, List<GenericStack> outputs) {
+        return PatternDetailsHelper.encodeProcessingPattern(inputs.toArray(GenericStack[]::new), outputs.toArray(GenericStack[]::new));
+    }
     private static ItemStack pattern(long output) {
-        return PatternDetailsHelper.encodeProcessingPattern(
+        return processing(
             List.of(new GenericStack(AEItemKey.of(Items.COBBLESTONE), 1)),
             List.of(new GenericStack(AEItemKey.of(Items.STONE), output)));
     }
@@ -49,21 +52,21 @@ public final class PatternRequestGameTests {
     }
     @GameTest(template = "empty")
     public static void rejectsMultipleOutputs(GameTestHelper h) {
-        var pattern = PatternDetailsHelper.encodeProcessingPattern(
+        var pattern = processing(
             List.of(new GenericStack(AEItemKey.of(Items.COBBLESTONE), 1)),
             List.of(new GenericStack(AEItemKey.of(Items.STONE), 1), new GenericStack(AEItemKey.of(Items.DIRT), 1)));
         reject(h, () -> PatternOrderRequest.decode(pattern, h.getLevel(), 1));
     }
     @GameTest(template = "empty")
     public static void rejectsFluidInputs(GameTestHelper h) {
-        var pattern = PatternDetailsHelper.encodeProcessingPattern(
+        var pattern = processing(
             List.of(new GenericStack(AEFluidKey.of(Fluids.WATER), 1000)),
             List.of(new GenericStack(AEItemKey.of(Items.STONE), 1)));
         reject(h, () -> PatternOrderRequest.decode(pattern, h.getLevel(), 1));
     }
     @GameTest(template = "empty")
     public static void rejectsFluidOutput(GameTestHelper h) {
-        var pattern = PatternDetailsHelper.encodeProcessingPattern(
+        var pattern = processing(
             List.of(new GenericStack(AEItemKey.of(Items.COBBLESTONE), 1)),
             List.of(new GenericStack(AEFluidKey.of(Fluids.WATER), 1000)));
         reject(h, () -> PatternOrderRequest.decode(pattern, h.getLevel(), 1));

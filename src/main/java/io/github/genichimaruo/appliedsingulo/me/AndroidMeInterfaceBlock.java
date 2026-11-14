@@ -1,13 +1,11 @@
 package io.github.genichimaruo.appliedsingulo.me;
 
-import com.mojang.serialization.MapCodec;
 import io.github.genichimaruo.appliedsingulo.registry.ModContent;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -26,11 +24,9 @@ import net.minecraft.world.phys.BlockHitResult;
  * points it at a console, using it opens the AE2-style status screen.
  */
 public final class AndroidMeInterfaceBlock extends Block implements EntityBlock {
-    public static final MapCodec<AndroidMeInterfaceBlock> CODEC = simpleCodec(AndroidMeInterfaceBlock::new);
 
     public AndroidMeInterfaceBlock(Properties properties) { super(properties); }
 
-    @Override protected MapCodec<? extends Block> codec() { return CODEC; }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -53,15 +49,10 @@ public final class AndroidMeInterfaceBlock extends Block implements EntityBlock 
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
-                                              InteractionHand hand, BlockHitResult hit) {
-        if (level.getBlockEntity(pos) instanceof AndroidMeInterfaceBlockEntity be && be.logic().useCard(stack, player))
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.getBlockEntity(pos) instanceof AndroidMeInterfaceBlockEntity cardHost
+                && cardHost.logic().useCard(player.getItemInHand(hand), player))
+            return InteractionResult.sidedSuccess(level.isClientSide);
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof AndroidMeInterfaceBlockEntity be) {
             if (!be.logic().mayUse(player)) {
                 player.displayClientMessage(Component.translatable("message.applied_singulo.device.not_owner"), true);
@@ -74,7 +65,7 @@ public final class AndroidMeInterfaceBlock extends Block implements EntityBlock 
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof AndroidMeInterfaceBlockEntity be)
             for (var drop : be.logic().breakDown()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
         super.onRemove(state, level, pos, newState, moving);

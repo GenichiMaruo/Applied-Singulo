@@ -13,7 +13,7 @@
     }
   ],
   "result": {
-    "id": "applied_singulo:android_order_monitor",
-    "count": 1
+    "count": 1,
+    "item": "applied_singulo:android_order_monitor"
   }
 }

@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * One face of the Android ME Interface seen as a Singulo storage: the items stored in its ME network, one slot per

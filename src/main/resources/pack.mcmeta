@@ -1,1 +1,6 @@
-{"pack":{"pack_format":34,"description":"Applied Singulo resources"}}
+{
+  "pack": {
+    "pack_format": 15,
+    "description": "Applied Singulo resources"
+  }
+}

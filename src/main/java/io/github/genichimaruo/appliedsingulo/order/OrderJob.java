@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -71,7 +70,7 @@ public final class OrderJob {
     }
 
     boolean mergeable(ItemStack stack, BlockPos console) {
-        return state == State.QUEUED && !submitted && ItemStack.isSameItemSameComponents(target, stack)
+        return state == State.QUEUED && !submitted && ItemStack.isSameItemSameTags(target, stack)
             && this.console.equals(console);
     }
 
@@ -87,10 +86,10 @@ public final class OrderJob {
         if (!fluid.isEmpty()) {   // fluid samples: one per fluid, amounts in mB
             for (int i = 0; i < into.size(); i++) {
                 var held = io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidOf(into.get(i));
-                if (!held.isEmpty() && net.neoforged.neoforge.fluids.FluidStack.isSameFluidSameComponents(held, fluid)
+                if (!held.isEmpty() && held.isFluidEqual(fluid)
                         && (long) held.getAmount() + fluid.getAmount() <= Integer.MAX_VALUE) {
                     into.set(i, io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
-                        held.copyWithAmount(held.getAmount() + fluid.getAmount())));
+                        new net.minecraftforge.fluids.FluidStack(held, held.getAmount() + fluid.getAmount())));
                     return;
                 }
             }
@@ -99,7 +98,7 @@ public final class OrderJob {
         }
         for (var held : into) {
             if (stack.isEmpty()) return;
-            if (!ItemStack.isSameItemSameComponents(held, stack)) continue;
+            if (!ItemStack.isSameItemSameTags(held, stack)) continue;
             int move = Math.min(stack.getCount(), held.getMaxStackSize() - held.getCount());
             if (move <= 0) continue;
             held.grow(move);
@@ -112,17 +111,17 @@ public final class OrderJob {
         }
     }
 
-    public CompoundTag save(HolderLookup.Provider registries) {
+    public CompoundTag save() {
         var tag = new CompoundTag();
         tag.putUUID("request", request);
         tag.putLong("console", console.asLong());
-        tag.put("target", target.save(registries));
+        tag.put("target", target.save(new CompoundTag()));
         tag.putLong("count", count);
         tag.putInt("pushes", pushes);
         tag.putString("state", state.name());
         tag.putBoolean("submitted", submitted);
         var list = new ListTag();
-        for (var s : materials) if (!s.isEmpty()) list.add(s.save(registries));
+        for (var s : materials) if (!s.isEmpty()) list.add(s.save(new CompoundTag()));
         tag.put("materials", list);
         tag.putLong("delivered", delivered);
         tag.putLong("claimedProducts", claimedProducts);
@@ -137,9 +136,9 @@ public final class OrderJob {
     }
 
     @Nullable
-    public static OrderJob load(CompoundTag tag, HolderLookup.Provider registries) {
+    public static OrderJob load(CompoundTag tag) {
         if (!tag.hasUUID("request")) return null;
-        var target = ItemStack.parseOptional(registries, tag.getCompound("target"));
+        var target = ItemStack.of(tag.getCompound("target"));
         long count = tag.getLong("count");
         if (target.isEmpty() || count <= 0) return null;
         var job = new OrderJob(tag.getUUID("request"), BlockPos.of(tag.getLong("console")), target, count);
@@ -152,7 +151,7 @@ public final class OrderJob {
             job.state = job.submitted ? State.RUNNING : State.QUEUED;
         }
         for (Tag t : tag.getList("materials", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+            var s = ItemStack.of((CompoundTag) t);
             if (!s.isEmpty()) job.materials.add(s);
         }
         job.pushes = Math.max(1, tag.getInt("pushes"));

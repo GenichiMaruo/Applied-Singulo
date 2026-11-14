@@ -9,7 +9,6 @@ import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -17,8 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.items.ItemStackHandler;
 
 /**
  * Shared core of the bridge and the ME interface, on Singulo's private crafting escrow (AndroidEscrows, 0.19.0).
@@ -382,29 +381,29 @@ public final class AndroidOrderQueue {
 
     // ------------------------------------------------------------------ persistence
 
-    public void save(CompoundTag tag, HolderLookup.Provider registries) {
+    public void save(CompoundTag tag) {
         if (owner != null) tag.putUUID("owner", owner);
         if (console != null) tag.putLong("console", console.asLong());
-        tag.put("outputs", outputs.serializeNBT(registries));
+        tag.put("outputs", outputs.serializeNBT());
         var list = new ListTag();
-        for (var job : jobs) list.add(job.save(registries));
+        for (var job : jobs) list.add(job.save());
         tag.put("jobs", list);
         var later = new ListTag();
-        for (var s : returnLater) later.add(s.save(registries));
+        for (var s : returnLater) later.add(s.save(new CompoundTag()));
         tag.put("returnLater", later);
         var fluids = new ListTag();
-        for (var s : fluidOutputs) fluids.add(s.save(registries));
+        for (var s : fluidOutputs) fluids.add(s.save(new CompoundTag()));
         tag.put("fluidOutputs", fluids);
     }
 
-    public void load(CompoundTag tag, HolderLookup.Provider registries) {
+    public void load(CompoundTag tag) {
         owner = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
         console = tag.contains("console") ? BlockPos.of(tag.getLong("console")) : null;
         for (int i = 0; i < OUTPUT_SLOTS; i++) outputs.setStackInSlot(i, ItemStack.EMPTY);
         returnLater.clear();
         if (tag.contains("outputs")) {
             var loaded = new ItemStackHandler();
-            loaded.deserializeNBT(registries, tag.getCompound("outputs"));
+            loaded.deserializeNBT(tag.getCompound("outputs"));
             for (int i = 0; i < loaded.getSlots(); i++) {
                 var rest = ItemHandlerHelper.insertItemStacked(outputs, loaded.getStackInSlot(i).copy(), false);
                 if (!rest.isEmpty()) returnLater.add(rest);
@@ -412,16 +411,16 @@ public final class AndroidOrderQueue {
         }
         fluidOutputs.clear();
         for (Tag t : tag.getList("fluidOutputs", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+            var s = ItemStack.of((CompoundTag) t);
             if (!s.isEmpty()) fluidOutputs.add(s);
         }
         for (Tag t : tag.getList("returnLater", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+            var s = ItemStack.of((CompoundTag) t);
             if (!s.isEmpty()) returnLater.add(s);
         }
         jobs.clear();
         for (Tag t : tag.getList("jobs", Tag.TAG_COMPOUND)) {
-            var job = OrderJob.load((CompoundTag) t, registries);
+            var job = OrderJob.load((CompoundTag) t);
             if (job != null) jobs.add(job);
         }
     }

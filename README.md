@@ -6,28 +6,31 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 
 ## 必須環境
 
-- Minecraft **1.21.1** / NeoForge **21.1.256+** / Java **21**
+- Minecraft **1.20.1** / Forge **47.4.26+** または NeoForge **47.1.106+** / Java **17**
 - **Singulo 0.19.0 (0.19.x)** — 0.19.0 の個別預かり API `AndroidEscrows` を使います。**0.19.0 は未公開**のため、現在は開発版のコミットから自動ビルドして使います。Singulo 0.19.0 が公開されるまで Applied Singulo も公開できません。
-- **AE2 19.2.19+** (NeoForge) と、AE2 が必要とする **GuideME 21.1.1+**
+- **AE2 Forge 15.4.12+ (15.x)**。この世代では GuideME の別導入は不要です。
 
 ## 命名・ブランチ
 
-- 既定・維持ブランチ `1.21.1`、開発ブランチ `feature/0.1.0`
-- JAR: `Applied-Singulo-0.1.0-1.21.1N.jar` (`N` = NeoForge)。予定公開区分は **Beta**（JAR 名に beta は付けません）。
-- 1.20.1 移植は今回の対象外です。
+- 既定・維持ブランチ `1.20.1`、開発ブランチ `review/0.1.0-1201`
+- JAR: `Applied-Singulo-0.1.0-1.20.1F.jar` / `Applied-Singulo-0.1.0-1.20.1N.jar` (`F` = Forge、`N` = NeoForge)。予定公開区分は **Beta**（JAR 名に beta は付けません）。
+- 1.20.1 移植中です。現在の検証状況と依存待ちは [移植記録](docs/0.1.0/port-1.20.1.md) を参照してください。
 
 ## 開発
 
 ```sh
-./gradlew runClient                 # 依存 JAR を自動取得してクライアント起動
-./gradlew build                     # ビルド
-./gradlew runGameTestServer         # 実依存入り GameTest (18件)
-python3 tools/check_distribution.py # 配布 JAR 検査
+python3 tools/fetch_dependencies.py
+./gradlew fetchDependencies -Ploader=forge
+./gradlew build -Ploader=forge
+./gradlew runGameTestServer -Ploader=forge
+python3 tools/check_distribution.py --loader forge
 ```
 
-AE2・GuideME は `tools/dependencies.json` に固定した公式配布 URL から `libs/` へ自動ダウンロードされ、SHA-256 が一致しない JAR は削除して拒否します。未公開の Singulo 0.19.0 は、固定したコミットを `../Singulo`（なければ GitHub）から取り出して初回だけビルドします（[詳細](docs/development.md#singulo-dependency)）。依存 JAR は Git に含めず、アドオンにも同梱しません。
-
-手元でビルドした Singulo などを試すときは `-PsinguloJar=/path/Singulo.jar`（`-Pae2Jar` / `-PguideMeJar` も同様）で上書きできます。上書きした JAR はハッシュ検査されないため、公開前の検証には使わないでください。サーバーは `runServer`。初回 EULA は利用者が確認してください。
+NeoForge は `-Ploader=neoforge` / `--loader neoforge` に置き換えます。
+開発用の未公開本体を使う間は各 Gradle コマンドに `-PsinguloJar=/path/Singulo-0.19.0-1.20.1F.jar`
+（NeoForge は末尾N）を追加してください。対象が異なる本体では起動検証できません。
+`runClient` / `runServer` も同じ loader と依存を指定します。依存JARをGitや配布JARに同梱しません。
+上書きJAR・未公開依存を使ったビルドは公開用の検証ではありません。
 
 ## 使い方
 

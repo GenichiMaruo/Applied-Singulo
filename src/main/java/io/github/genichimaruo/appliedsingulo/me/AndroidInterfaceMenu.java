@@ -4,7 +4,7 @@ import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantics;
 import appeng.menu.MenuOpener;
 import appeng.menu.guisync.GuiSync;
-import appeng.menu.locator.MenuHostLocator;
+import appeng.menu.locator.MenuLocator;
 import io.github.genichimaruo.appliedsingulo.registry.ModContent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -31,11 +31,37 @@ public final class AndroidInterfaceMenu extends AEBaseMenu {
             this.amount = amount;
         }
     }
+    /** Legacy AE2's MenuTypeBuilder only registers in ae2's namespace. Keep our type in our own registry. */
+    public static net.minecraft.world.inventory.MenuType<AndroidInterfaceMenu> createType() {
+        var type = net.minecraftforge.common.extensions.IForgeMenuType.create((int id, Inventory inventory, net.minecraft.network.FriendlyByteBuf data) -> {
+            var locator = appeng.menu.locator.MenuLocators.readFromPacket(data);
+            var located = locator.locate(inventory.player, AndroidInterfaceHost.class);
+            if (located == null) throw new IllegalStateException("Android interface menu host unavailable");
+            var menu = new AndroidInterfaceMenu(id, inventory, located);
+            menu.setReturnedFromSubScreen(data.readBoolean());
+            return menu;
+        });
+        MenuOpener.addOpener(type, (player, locator, returned) -> {
+            if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return false;
+            var located = locator.locate(player, AndroidInterfaceHost.class);
+            if (located == null || !located.logic().mayUse(player)) return false;
+            net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, new net.minecraft.world.SimpleMenuProvider((id, inventory, p) -> {
+                var menu = new AndroidInterfaceMenu(id, inventory, located);
+                menu.setLocator(locator);
+                return menu;
+            }, located.hostIcon().getHoverName()), data -> {
+                appeng.menu.locator.MenuLocators.writeToPacket(data, locator);
+                data.writeBoolean(returned);
+            });
+            return true;
+        });
+        return type;
+    }
     public static final int DEPOSIT_SLOTS = 9;
 
     /** Insert-only view of one output-buffer slot. */
-    private static final class DepositSlot extends net.neoforged.neoforge.items.SlotItemHandler {
-        DepositSlot(net.neoforged.neoforge.items.IItemHandler handler, int index) { super(handler, index, 0, 0); }
+    private static final class DepositSlot extends net.minecraftforge.items.SlotItemHandler {
+        DepositSlot(net.minecraftforge.items.IItemHandler handler, int index) { super(handler, index, 0, 0); }
         @Override public boolean mayPickup(Player player) { return false; }
     }
 
@@ -56,7 +82,7 @@ public final class AndroidInterfaceMenu extends AEBaseMenu {
         registerClientAction(ACTION_SET_STOCK, StockAction.class, this::setStock);
     }
 
-    public static void open(Player player, MenuHostLocator locator) {
+    public static void open(Player player, MenuLocator locator) {
         MenuOpener.open(ModContent.ANDROID_INTERFACE_MENU.get(), player, locator);
     }
 

@@ -17,7 +17,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -27,18 +26,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * Android ME Interface panel: the interface as a cable part (like AE2's flat interface). It behaves like the block,
  * except that only the block in front of the panel can see the ME network as Singulo storage.
  */
 public final class AndroidInterfacePart extends AEBasePart implements AndroidInterfaceHost, IGridTickable {
-    public static final ResourceLocation MODEL_BASE = ResourceLocation.fromNamespaceAndPath(AppliedSingulo.MOD_ID,
+    public static final ResourceLocation MODEL_BASE = new ResourceLocation(AppliedSingulo.MOD_ID,
         "part/android_me_interface_panel_base");
-    private static final ResourceLocation STATUS_OFF = ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_off");
-    private static final ResourceLocation STATUS_ON = ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_on");
-    private static final ResourceLocation STATUS_CHANNEL = ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_has_channel");
+    private static final ResourceLocation STATUS_OFF = new ResourceLocation("ae2", "part/interface_off");
+    private static final ResourceLocation STATUS_ON = new ResourceLocation("ae2", "part/interface_on");
+    private static final ResourceLocation STATUS_CHANNEL = new ResourceLocation("ae2", "part/interface_has_channel");
     private static final IPartModel MODELS_OFF = new Models(List.of(MODEL_BASE, STATUS_OFF));
     private static final IPartModel MODELS_ON = new Models(List.of(MODEL_BASE, STATUS_ON));
     private static final IPartModel MODELS_HAS_CHANNEL = new Models(List.of(MODEL_BASE, STATUS_CHANNEL));
@@ -94,7 +93,7 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
     }
 
     @Override
-    public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(1, 1, false); }
+    public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(1, 1, false, false); }
 
     @Override
     public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
@@ -105,7 +104,8 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
     // ------------------------------------------------------------------ interaction
 
     @Override
-    public boolean onUseWithoutItem(Player player, Vec3 pos) {
+    public boolean onPartActivate(Player player, InteractionHand hand, Vec3 pos) {
+        if (logic.useCard(player.getItemInHand(hand), player)) return true;
         if (!isClientSide()) {
             if (!logic.mayUse(player)) {
                 player.displayClientMessage(Component.translatable("message.applied_singulo.device.not_owner"), true);
@@ -115,11 +115,6 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
             }
         }
         return true;
-    }
-
-    @Override
-    public boolean onUseItemOn(ItemStack stack, Player player, InteractionHand hand, Vec3 pos) {
-        return logic.useCard(stack, player) || super.onUseItemOn(stack, player, hand, pos);
     }
 
     @Override
@@ -144,17 +139,24 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
         return isPowered() ? MODELS_ON : MODELS_OFF;
     }
 
+    @Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
+            var view = storageView();
+            if (view != null) return net.minecraftforge.common.util.LazyOptional.of(() -> view).cast();
+        }
+        return super.getCapability(cap);
+    }
     // ------------------------------------------------------------------ persistence
 
     @Override
-    public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readFromNBT(tag, registries);
-        logic.load(tag, registries);
+    public void readFromNBT(CompoundTag tag) {
+        super.readFromNBT(tag);
+        logic.load(tag);
     }
 
     @Override
-    public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeToNBT(tag, registries);
-        logic.save(tag, registries);
+    public void writeToNBT(CompoundTag tag) {
+        super.writeToNBT(tag);
+        logic.save(tag);
     }
 }

@@ -33,7 +33,7 @@ public record PatternOrderRequest(ItemStack target, long count) {
     public static PatternOrderRequest fromDetails(IPatternDetails details, int batches) {
         if (batches <= 0 || batches > MAX_COUNT)
             throw new IllegalArgumentException("Batch count must be between 1 and 4096");
-        if (details.getOutputs().size() != 1)
+        if (details.getOutputs().length != 1)
             throw new IllegalArgumentException("Only patterns with one output are supported");
         for (var input : details.getInputs()) {
             for (var candidate : input.getPossibleInputs()) {
@@ -41,7 +41,7 @@ public record PatternOrderRequest(ItemStack target, long count) {
                     throw new IllegalArgumentException("Only item inputs are supported");
             }
         }
-        var output = details.getOutputs().getFirst();
+        var output = details.getOutputs()[0];
         if (!(output.what() instanceof AEItemKey item) || output.amount() <= 0)
             throw new IllegalArgumentException("Only positive item outputs are supported");
         if (output.amount() > MAX_COUNT / batches)

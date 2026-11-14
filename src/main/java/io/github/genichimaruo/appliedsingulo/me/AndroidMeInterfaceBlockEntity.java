@@ -13,7 +13,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -21,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 /** Android ME Interface block: an in-world ME node hosting {@link AndroidInterfaceLogic} on all six sides. */
 public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements AndroidInterfaceHost, IInWorldGridNodeHost {
@@ -44,7 +43,7 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
     @Nullable @Override public Level hostLevel() { return level; }
     @Override public BlockPos hostPos() { return worldPosition; }
     @Override public boolean exposesStorageTowards(Direction side) { return true; }
-    @Override public ItemStack hostIcon() { return ModContent.ANDROID_ME_INTERFACE_ITEM.toStack(); }
+    @Override public ItemStack hostIcon() { return ModContent.ANDROID_ME_INTERFACE_ITEM.get().getDefaultInstance(); }
     @Override public void saveChanges() { setChanged(); }
 
     // convenience accessors (tests, commands)
@@ -95,20 +94,33 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
         be.logic.tick((ServerLevel) level);
     }
 
+    private final net.minecraftforge.common.util.LazyOptional<IInWorldGridNodeHost> gridCapability = net.minecraftforge.common.util.LazyOptional.of(() -> this);
+    private final java.util.Map<Direction, net.minecraftforge.common.util.LazyOptional<IItemHandler>> itemCapabilities = new java.util.EnumMap<>(Direction.class);
+    @Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (isRemoved()) return net.minecraftforge.common.util.LazyOptional.empty();
+        if (cap == appeng.capabilities.Capabilities.IN_WORLD_GRID_NODE_HOST) return gridCapability.cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            var view = storageView(side);
+            if (view != null) return itemCapabilities.computeIfAbsent(side, d -> net.minecraftforge.common.util.LazyOptional.of(() -> view)).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    @Override public void invalidateCaps() { super.invalidateCaps(); gridCapability.invalidate(); itemCapabilities.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate); itemCapabilities.clear(); }
+
     // ------------------------------------------------------------------ persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        logic.save(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        logic.save(tag);
         mainNode.saveToNBT(tag);
         tag.putInt("schema", 3);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        logic.load(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        logic.load(tag);
         mainNode.loadFromNBT(tag);
     }
 }

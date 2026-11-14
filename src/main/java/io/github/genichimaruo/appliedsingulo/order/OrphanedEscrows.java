@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -13,7 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.minecraftforge.event.TickEvent;
 
 /**
  * Requests whose device was broken while Singulo still held them. Their products and refunds are claimed as
@@ -28,7 +27,7 @@ public final class OrphanedEscrows extends SavedData {
     private final List<Entry> entries = new ArrayList<>();
 
     public static OrphanedEscrows get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(OrphanedEscrows::new, OrphanedEscrows::load), NAME);
+        return level.getDataStorage().computeIfAbsent(OrphanedEscrows::load, OrphanedEscrows::new, NAME);
     }
 
     void add(UUID owner, UUID request, BlockPos pos) {
@@ -38,9 +37,9 @@ public final class OrphanedEscrows extends SavedData {
 
     public int size() { return entries.size(); }
 
-    public static void onLevelTick(LevelTickEvent.Post event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % INTERVAL != 0) return;
-        var data = level.getDataStorage().get(new SavedData.Factory<>(OrphanedEscrows::new, OrphanedEscrows::load), NAME);
+    public static void onLevelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level) || level.getGameTime() % INTERVAL != 0) return;
+        var data = level.getDataStorage().get(OrphanedEscrows::load, NAME);
         if (data != null && !data.entries.isEmpty()) data.process(level);
     }
 
@@ -70,7 +69,7 @@ public final class OrphanedEscrows extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+    public CompoundTag save(CompoundTag tag) {
         var list = new ListTag();
         for (var e : entries) {
             var t = new CompoundTag();
@@ -83,7 +82,7 @@ public final class OrphanedEscrows extends SavedData {
         return tag;
     }
 
-    private static OrphanedEscrows load(CompoundTag tag, HolderLookup.Provider registries) {
+    private static OrphanedEscrows load(CompoundTag tag) {
         var data = new OrphanedEscrows();
         for (Tag raw : tag.getList("entries", Tag.TAG_COMPOUND)) {
             var t = (CompoundTag) raw;

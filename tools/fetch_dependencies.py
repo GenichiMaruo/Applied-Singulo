@@ -12,7 +12,7 @@ out = root / "libs"
 out.mkdir(exist_ok=True)
 for name, expected in json.loads((root / "tools/dependencies.json").read_text()).items():
     if "sha256" not in expected:
-        print(f"Skipped {name}: unreleased, built by Gradle from commit {expected['commit'][:12]}")
+        print(f"Skipped {name}: unreleased, built by Gradle from commit {expected.get('commit', 'PENDING')[:12]}")
         continue
     path = out / name
     data = path.read_bytes() if path.exists() else urllib.request.urlopen(urllib.request.Request(expected["url"], headers={"User-Agent": "Applied-Singulo-build"}), timeout=120).read()

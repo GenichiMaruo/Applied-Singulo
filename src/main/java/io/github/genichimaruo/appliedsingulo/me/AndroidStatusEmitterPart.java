@@ -12,9 +12,8 @@ import appeng.parts.AEBasePart;
 import io.github.genichimaruo.appliedsingulo.AppliedSingulo;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -52,7 +51,7 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     private Mode mode = Mode.STUCK;
     private boolean emitting;
 
-    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(AppliedSingulo.MOD_ID, path); }
+    private static ResourceLocation id(String path) { return new ResourceLocation(AppliedSingulo.MOD_ID, path); }
 
     public AndroidStatusEmitterPart(IPartItem<?> item) {
         super(item);
@@ -74,7 +73,7 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
         }
     }
 
-    @Override public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(20, 20, false); }
+    @Override public TickingRequest getTickingRequest(IGridNode node) { return new TickingRequest(20, 20, false, false); }
 
     @Override
     public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
@@ -83,7 +82,7 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     }
 
     @Override
-    public boolean onUseWithoutItem(Player player, Vec3 pos) {
+    public boolean onPartActivate(Player player, net.minecraft.world.InteractionHand hand, Vec3 pos) {
         if (!isClientSide()) {
             mode = Mode.values()[(mode.ordinal() + 1) % Mode.values().length];
             if (getHost() != null) getHost().markForSave();
@@ -108,13 +107,13 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     @Override public IPartModel getStaticModels() { return emitting ? ON : OFF; }
 
     @Override
-    public void writeToStream(RegistryFriendlyByteBuf data) {
+    public void writeToStream(FriendlyByteBuf data) {
         super.writeToStream(data);
         data.writeBoolean(emitting);
     }
 
     @Override
-    public boolean readFromStream(RegistryFriendlyByteBuf data) {
+    public boolean readFromStream(FriendlyByteBuf data) {
         boolean changed = super.readFromStream(data);
         boolean was = emitting;
         emitting = data.readBoolean();
@@ -122,15 +121,15 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     }
 
     @Override
-    public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readFromNBT(tag, registries);
+    public void readFromNBT(CompoundTag tag) {
+        super.readFromNBT(tag);
         try { mode = Mode.valueOf(tag.getString("mode")); } catch (IllegalArgumentException ignored) { mode = Mode.STUCK; }
         emitting = tag.getBoolean("emitting");
     }
 
     @Override
-    public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeToNBT(tag, registries);
+    public void writeToNBT(CompoundTag tag) {
+        super.writeToNBT(tag);
         tag.putString("mode", mode.name());
         tag.putBoolean("emitting", emitting);
     }

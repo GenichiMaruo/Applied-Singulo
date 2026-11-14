@@ -1,40 +1,43 @@
-name: Build
+name: Build 1.20.1
 on:
   push:
-    branches: ['1.21.1', 'feature/**', 'fix/**']
+    branches: ['1.20.1', 'feature/**', 'fix/**', 'review/**']
   pull_request:
-    branches: ['1.21.1']
+    branches: ['1.20.1']
 permissions:
   contents: read
 jobs:
   integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [forge, neoforge]
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '17'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - uses: gradle/actions/setup-gradle@v4
-      # Downloads AE2 19.2.19 and GuideME 21.1.1 and verifies their pinned SHA-256. The unreleased Singulo 0.19.0
-      # is fetched at its pinned commit from GitHub and built by the Gradle fetchDependencies task (not yet run in CI).
       - run: python3 tools/fetch_dependencies.py
-      - name: Build and test the addon with real dependencies
+      - name: Build and test with real dependencies
         shell: bash
         run: |
           set -euo pipefail
-          bash gradlew --no-daemon build
-          python3 tools/check_distribution.py
-          bash gradlew --no-daemon runGameTestServer 2>&1 | tee build/integration-gametest.log
-          python3 tools/check_gametest_log.py build/integration-gametest.log
+          bash gradlew --no-daemon fetchDependencies -Ploader=${{ matrix.loader }}
+          bash gradlew --no-daemon build -Ploader=${{ matrix.loader }}
+          python3 tools/check_distribution.py --loader ${{ matrix.loader }}
+          bash gradlew --no-daemon runGameTestServer -Ploader=${{ matrix.loader }} 2>&1 | tee build/${{ matrix.loader }}/integration-gametest.log
+          python3 tools/check_gametest_log.py build/${{ matrix.loader }}/integration-gametest.log
       - uses: actions/upload-artifact@v4
         with:
-          name: applied-singulo-development
+          name: applied-singulo-1.20.1-${{ matrix.loader }}-development
           path: |
-            build/libs/Applied-Singulo-*.jar
-            build/integration-gametest.log
+            build/${{ matrix.loader }}/libs/Applied-Singulo-*.jar
+            build/${{ matrix.loader }}/integration-gametest.log
           if-no-files-found: error

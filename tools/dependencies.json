@@ -1,21 +1,19 @@
 {
-  "Singulo-0.19.0-1.21.1N.jar": {
+  "Singulo-0.19.0-1.20.1F.jar": {
     "property": "singuloJar",
+    "loader": "forge",
     "unreleased": true,
-    "note": "Singulo 0.19.0 development API (AndroidEscrows private crafting custody, AndroidOrders.recipes, AndroidSharedStorage). Built from this exact commit; not a release, not hash-pinned. Replace with the published release URL and SHA-256 before publishing Applied Singulo.",
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "branch": "feature/0.19.0",
-    "commit": "d12d72c0b312931276b655bb30062a09be591502",
-    "localClone": "../Singulo"
+    "note": "Pending verified 1.20.1 0.19.0 API dependency. Build requires an explicit development singuloJar override until the published release is pinned."
   },
-  "appliedenergistics2-19.2.19.jar": {
+  "Singulo-0.19.0-1.20.1N.jar": {
+    "property": "singuloJar",
+    "loader": "neoforge",
+    "unreleased": true,
+    "note": "Pending verified 1.20.1 0.19.0 API dependency. Build requires an explicit development singuloJar override until the published release is pinned."
+  },
+  "appliedenergistics2-forge-15.4.12.jar": {
     "property": "ae2Jar",
-    "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/neoforge/v19.2.19/appliedenergistics2-19.2.19.jar",
-    "sha256": "7db959595ca8734acccac51c963567460e7db9f31b145b23dea72778b692777b"
-  },
-  "guideme-21.1.1.jar": {
-    "property": "guideMeJar",
-    "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v21.1.1/guideme-21.1.1.jar",
-    "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
+    "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge/v15.4.12/appliedenergistics2-forge-15.4.12.jar",
+    "sha256": "b9c5928893a20d3feb0b4393e2c23d756a16d9abee24d9c14c98e6096d53844d"
   }
 }

@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -32,7 +31,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * Everything an Android ME Interface does, shared by the block and the cable panel (like AE2's InterfaceLogic).
@@ -296,7 +295,7 @@ public final class AndroidInterfaceLogic {
             if (!fluid.isEmpty()) {
                 long inserted = storage.insert(appeng.api.stacks.AEFluidKey.of(fluid), fluid.getAmount(), Actionable.MODULATE, source);
                 return inserted >= fluid.getAmount() ? ItemStack.EMPTY
-                    : io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(fluid.copyWithAmount((int) (fluid.getAmount() - inserted)));
+                    : io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(new net.minecraftforge.fluids.FluidStack(fluid, (int) (fluid.getAmount() - inserted)));
             }
             var key = AEItemKey.of(stack);
             if (key == null) return stack;
@@ -445,8 +444,8 @@ public final class AndroidInterfaceLogic {
 
     // ------------------------------------------------------------------ persistence
 
-    public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        queue.save(tag, registries);
+    public void save(CompoundTag tag) {
+        queue.save(tag);
         chainNode.saveToNBT(tag);
         tag.putInt("priority", priority);
         var stock = new net.minecraft.nbt.ListTag();
@@ -454,15 +453,15 @@ public final class AndroidInterfaceLogic {
             if (stockItems[i] == null) continue;
             var entry = new CompoundTag();
             entry.putInt("slot", i);
-            entry.put("item", stockItems[i].toTagGeneric(registries));
+            entry.put("item", stockItems[i].toTagGeneric());
             entry.putLong("amount", stockAmounts[i]);
             stock.add(entry);
         }
         tag.put("stock", stock);
     }
 
-    public void load(CompoundTag tag, HolderLookup.Provider registries) {
-        queue.load(tag, registries);
+    public void load(CompoundTag tag) {
+        queue.load(tag);
         chainNode.loadFromNBT(tag);
         priority = tag.getInt("priority");
         java.util.Arrays.fill(stockItems, null);
@@ -471,7 +470,7 @@ public final class AndroidInterfaceLogic {
             var entry = (CompoundTag) raw;
             int slot = entry.getInt("slot");
             if (slot < 0 || slot >= STOCK_SLOTS) continue;
-            if (appeng.api.stacks.AEKey.fromTagGeneric(registries, entry.getCompound("item")) instanceof AEItemKey key) {
+            if (appeng.api.stacks.AEKey.fromTagGeneric(entry.getCompound("item")) instanceof AEItemKey key) {
                 stockItems[slot] = key;
                 stockAmounts[slot] = entry.getLong("amount");
             }

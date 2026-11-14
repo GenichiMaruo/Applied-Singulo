@@ -3,7 +3,7 @@ package io.github.genichimaruo.appliedsingulo.client;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.PaletteColor;
 import appeng.client.gui.style.ScreenStyle;
-import appeng.client.gui.widgets.AE2Button;
+import net.minecraft.client.gui.components.Button;
 import io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceMenu;
 import io.github.genichimaruo.appliedsingulo.me.InterfaceStatus;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     private static final int GREEN = 0xFF2E8B3A, YELLOW = 0xFFA07800, RED = 0xFFB02828;
     private static final int SLOTS_X = 8, JOBS_Y = 72, STOCK_Y = 104, SLOT = 18, COLUMNS = 9;
 
-    private final AE2Button cancelAll;
+    private final Button cancelAll;
     private List<Component> hoverTooltip = List.of();
 
     public AndroidInterfaceScreen(AndroidInterfaceMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
@@ -165,7 +165,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         int slot = stockSlotAt(mouseX, mouseY);
         if (slot >= 0 && slot < menu.status.stock().size()) {
             var k = menu.status.stock().get(slot);
@@ -176,7 +176,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
             }
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollY);
     }
 
     /** Tooltip of the status lines: the numbers that used to be printed. */

@@ -1,6 +1,6 @@
 package io.github.genichimaruo.appliedsingulo.gametest;
 
-import appeng.api.AECapabilities;
+import appeng.capabilities.Capabilities;
 import io.github.genichimaruo.appliedsingulo.order.AndroidOrderQueue;
 import io.github.genichimaruo.appliedsingulo.order.OrderJob;
 import io.github.genichimaruo.appliedsingulo.order.OrphanedEscrows;
@@ -38,9 +38,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder("applied_singulo")
 @PrefixGameTestTemplate(false)
@@ -59,9 +59,9 @@ public final class MeInterfaceGameTests {
         for (int i = 0; i < 64; i++)
             h.assertTrue(queue.accept(new ItemStack(Items.STONE), 1, cobble(1), console, i), "push " + i);
         h.assertTrue(queue.jobs().size() == 1, "Same output must merge into one request, got " + queue.jobs().size());
-        var job = queue.jobs().getFirst();
+        var job = queue.jobs().get(0);
         h.assertTrue(job.count() == 64 && job.pushes() == 64 && job.state() == OrderJob.State.QUEUED, "Merged count");
-        h.assertTrue(job.heldMaterials().size() == 1 && job.heldMaterials().getFirst().getCount() == 64,
+        h.assertTrue(job.heldMaterials().size() == 1 && job.heldMaterials().get(0).getCount() == 64,
             "Held materials are stacked, ready to offer: " + job.heldMaterials());
         h.assertTrue(queue.accept(new ItemStack(Items.SMOOTH_STONE), 1, cobble(1), console, 70), "Other output");
         h.assertTrue(queue.jobs().size() == 2, "Different outputs are separate requests");
@@ -94,20 +94,20 @@ public final class MeInterfaceGameTests {
         var stone = List.of(new AndroidRecipe.Product(new ItemStack(Items.STONE), 2, false));
         var crafting = new AndroidRecipe("crafting", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 3)), false);
         var recipe = SinguloLinks.convert(crafting);
-        h.assertTrue(recipe != null && recipe.inputs().size() == 1 && recipe.inputs().getFirst().count() == 3, "Converted: " + recipe);
+        h.assertTrue(recipe != null && recipe.inputs().size() == 1 && recipe.inputs().get(0).count() == 3, "Converted: " + recipe);
         var pattern = AndroidRecipePattern.of(recipe);
         h.assertTrue(pattern != null && pattern.getInputs()[0].getMultiplier() == 3
-            && pattern.getOutputs().getFirst().amount() == 2, "Pattern amounts");
+            && pattern.getOutputs()[0].amount() == 2, "Pattern amounts");
         h.assertTrue(pattern.equals(AndroidRecipePattern.of(recipe)), "Same recipe, same pattern (dedup across interfaces)");
 
         var alt = new AndroidRecipe.Material(new ItemStack(Items.OAK_PLANKS), 2,
             List.of(new ItemStack(Items.OAK_PLANKS), new ItemStack(Items.BIRCH_PLANKS)), "{\"tag\":\"minecraft:planks\"}", false, false, false);
         var withAlt = SinguloLinks.convert(new AndroidRecipe("crafting", pos, stone, List.of(alt), false));
-        h.assertTrue(withAlt != null && withAlt.inputs().getFirst().options().size() == 2, "Alternatives become AE2 options");
+        h.assertTrue(withAlt != null && withAlt.inputs().get(0).options().size() == 2, "Alternatives become AE2 options");
 
         // Machine (processing) recipes are exported now; their fluid inputs become AE2 fluid inputs (mB).
         var water = io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
-            new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1));
+            new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1));
         var machine = SinguloLinks.convert(new AndroidRecipe("processing", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 1),
             new AndroidRecipe.Material(water, 250, List.of(water), "", false, false, true)), false));
         h.assertTrue(machine != null && machine.inputs().size() == 2, "Machine recipe with a fluid exported: " + machine);
@@ -133,10 +133,10 @@ public final class MeInterfaceGameTests {
         h.setBlock(ME.south(), SinguloBlocks.ANDROID_WORK_CONSOLE.get());
         ((WorkConsoleBlockEntity) h.getBlockEntity(ME.south())).setOwner(owner);
         h.setBlock(ME, ModContent.ANDROID_ME_INTERFACE.get());
-        h.assertTrue(h.getLevel().getCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST, h.absolutePos(ME), null) != null,
+        h.assertTrue(h.getLevel().getBlockEntity(h.absolutePos(ME)).getCapability(Capabilities.IN_WORLD_GRID_NODE_HOST).orElse(null) != null,
             "Cables must be able to connect");
         for (var side : Direction.values()) {
-            var view = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(ME), side);
+            var view = h.getLevel().getBlockEntity(h.absolutePos(ME)).getCapability(ForgeCapabilities.ITEM_HANDLER, side).orElse(null);
             h.assertTrue(view == null || view.getSlots() == 0,
                 "Without an owner and an online ME network, no face may show or accept anything");
         }
@@ -149,7 +149,7 @@ public final class MeInterfaceGameTests {
 
     // ------------------------------------------------------------------ real Singulo workshop
 
-    private static Item singulo(String name) { return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("singulo", name)); }
+    private static Item singulo(String name) { return BuiltInRegistries.ITEM.get(new ResourceLocation("singulo", name)); }
 
     private static ItemStack recipeCard(GameTestHelper h, List<ItemStack> grid, ItemStack output) {
         var card = new ItemStack(singulo("recipe_card"));
@@ -171,14 +171,14 @@ public final class MeInterfaceGameTests {
         h.setBlock(TABLE, tableBlock);
         ((ChestBlockEntity) h.getBlockEntity(CHEST)).setItem(0, new ItemStack(Items.OAK_LOG, 32));
         var player = h.makeMockServerPlayerInLevel();
-        WorkConsoleBlockEntity console = h.getBlockEntity(CONSOLE);
+        WorkConsoleBlockEntity console = (WorkConsoleBlockEntity) h.getBlockEntity(CONSOLE);
         console.setOwner(player.getUUID());
         var link = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(link, level, h.absolutePos(CONSOLE), SinguloBlocks.ANDROID_WORK_CONSOLE.get());
         for (var p : List.of(SUPPLY, RACK)) ((WorkLinkedBlockEntity) h.getBlockEntity(p)).useItem(player, link, InteractionHand.MAIN_HAND);
         var table = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(table, level, h.absolutePos(TABLE), tableBlock);
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = (RecipeRackBlockEntity) h.getBlockEntity(RACK);
         List<ItemStack> planks = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
         planks.set(0, new ItemStack(Items.OAK_LOG));
         List<ItemStack> sticks = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
@@ -234,11 +234,11 @@ public final class MeInterfaceGameTests {
                 for (int i = 0; i < 4; i++)
                     h.assertTrue(me.queue().accept(new ItemStack(Items.OAK_PLANKS), 4, List.of(new ItemStack(Items.OAK_LOG)),
                         console.getBlockPos(), now), "push " + i);
-                h.assertTrue(me.queue().jobs().size() == 1 && me.queue().jobs().getFirst().count() == 16, "Batched into one request");
-                request[0] = me.queue().jobs().getFirst().request;
+                h.assertTrue(me.queue().jobs().size() == 1 && me.queue().jobs().get(0).count() == 16, "Batched into one request");
+                request[0] = me.queue().jobs().get(0).request;
             })
             .thenWaitUntil(() -> {
-                if (!submitted[0] && !me.queue().jobs().isEmpty() && me.queue().jobs().getFirst().submitted()) {
+                if (!submitted[0] && !me.queue().jobs().isEmpty() && me.queue().jobs().get(0).submitted()) {
                     submitted[0] = true;
                     h.assertTrue(me.queue().heldContents().isEmpty(), "Materials must be relinquished exactly on acceptance");
                 }
@@ -309,7 +309,7 @@ public final class MeInterfaceGameTests {
         var b = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(me2);
         a.queue().setOwner(console.owner());
         b.queue().setOwner(console.owner());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(),
             "Storage cell into the drive");
         h.startSequence()
@@ -356,10 +356,10 @@ public final class MeInterfaceGameTests {
             "Two chains first, then three single steps: " + all);
         var fenceChain = all.stream().filter(r -> r.chained() && r.output().is(Items.OAK_FENCE)).findFirst().orElseThrow();
         h.assertTrue(fenceChain.outputCount() == 12 && fenceChain.inputs().size() == 1
-            && fenceChain.inputs().getFirst().options().getFirst().is(Items.OAK_LOG) && fenceChain.inputs().getFirst().count() == 5,
+            && fenceChain.inputs().get(0).options().get(0).is(Items.OAK_LOG) && fenceChain.inputs().get(0).count() == 5,
             "5 logs -> 12 fences: " + fenceChain);
         var stickChain = all.stream().filter(r -> r.chained() && r.output().is(Items.STICK)).findFirst().orElseThrow();
-        h.assertTrue(stickChain.outputCount() == 8 && stickChain.inputs().getFirst().count() == 1, "1 log -> 8 sticks: " + stickChain);
+        h.assertTrue(stickChain.outputCount() == 8 && stickChain.inputs().get(0).count() == 1, "1 log -> 8 sticks: " + stickChain);
         h.assertFalse(AndroidRecipePattern.of(fenceChain).equals(AndroidRecipePattern.of(SinguloLinks.convert(fence))),
             "The chain and the single step are different AE2 patterns");
 
@@ -367,7 +367,7 @@ public final class MeInterfaceGameTests {
         var ingot = crafting(new ItemStack(Items.IRON_INGOT), 9, item(new ItemStack(Items.IRON_BLOCK), 1));
         var block = crafting(new ItemStack(Items.IRON_BLOCK), 1, item(new ItemStack(Items.IRON_INGOT), 9));
         for (var r : SinguloLinks.patternRecipes(List.of(ingot, block)))
-            h.assertTrue(r.inputs().stream().noneMatch(in -> in.options().stream().anyMatch(o -> ItemStack.isSameItemSameComponents(o, r.output()))),
+            h.assertTrue(r.inputs().stream().noneMatch(in -> in.options().stream().anyMatch(o -> ItemStack.isSameItemSameTags(o, r.output()))),
                 "Self-consuming pattern exported: " + r);
         h.succeed();
     }
@@ -384,7 +384,7 @@ public final class MeInterfaceGameTests {
         h.succeedWhen(() -> {
             if (!console.orders().isEmpty()) {
                 h.assertTrue(console.orders().size() == 1, "The chain must be a single order, got " + console.orders().size());
-                oneOrder[0] |= console.orders().getFirst().steps.size() >= 3;   // planks, sticks and fences
+                oneOrder[0] |= console.orders().get(0).steps.size() >= 3;   // planks, sticks and fences
             }
             h.assertTrue(oneOrder[0], "One order covering planks, sticks and fences expected: " + me.queue().jobs() + " orders=" + console.orders().stream().map(o -> o.steps.size()).toList());
             h.assertTrue(me.queue().jobs().isEmpty(), "Request still open: " + me.queue().jobs());
@@ -404,7 +404,7 @@ public final class MeInterfaceGameTests {
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var fence = appeng.api.stacks.AEItemKey.of(Items.OAK_FENCE);
         java.util.concurrent.Future<?>[] calc = { null };
@@ -420,8 +420,7 @@ public final class MeInterfaceGameTests {
             catch (Exception e) { throw new IllegalStateException(e); }
         };
         java.util.function.Predicate<appeng.api.crafting.IPatternDetails> isChain = p ->
-            p instanceof AndroidRecipePattern r && r.getDefinition().toStack().get(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
-                .copyTag().getBoolean("chain");
+            p instanceof AndroidRecipePattern r && r.getDefinition().toStack().getOrCreateTag().getBoolean("chain");
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(me.mainNode().isActive() && me.patterns().size() == 5
                 && !me.mainNode().getGrid().getCraftingService().getCraftables(k -> k.equals(fence)).isEmpty(),
@@ -480,7 +479,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(me1, ModContent.ANDROID_ME_INTERFACE.get());
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(me1);
         me.queue().setOwner(console.owner());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         UUID request = UUID.randomUUID();
         h.startSequence()
@@ -520,7 +519,7 @@ public final class MeInterfaceGameTests {
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var fence = appeng.api.stacks.AEItemKey.of(Items.OAK_FENCE);
         var log = appeng.api.stacks.AEItemKey.of(Items.OAK_LOG);
@@ -584,7 +583,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(panel != null, "Panel placed on the cable");
         panel.logic().queue().setOwner(console.owner());
         panel.logic().queue().setConsole(console.getBlockPos());
-        var cells = level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = level.getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(panel.getMainNode().isActive() && panel.logic().patterns().size() == 5,
@@ -618,7 +617,7 @@ public final class MeInterfaceGameTests {
             1, 0, 5, 256, 2, 36, true, "hold_full", List.of(new InterfaceStatus.Push("minecraft:stick", true, 3)),
             List.of(new InterfaceStatus.Stack("minecraft:oak_fence", 72)),
             List.of(new InterfaceStatus.Stock("minecraft:stick", 64, 10, "crafting"), InterfaceStatus.Stock.EMPTY));
-        var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), h.getLevel().registryAccess());
+        var buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         status.writeToPacket(buf);
         h.assertTrue(new InterfaceStatus(buf).equals(status) && buf.readableBytes() == 0, "Round trip");
         h.succeed();
@@ -634,7 +633,7 @@ public final class MeInterfaceGameTests {
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
         var player = h.makeMockServerPlayerInLevel();
         me.queue().setOwner(player.getUUID());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var menu = new io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceMenu(1, player.getInventory(), me);
         var deposit = menu.getSlot(0);
@@ -662,7 +661,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         appeng.api.parts.PartHelper.setPart(h.getLevel(), h.absolutePos(bus), null, null,
             appeng.core.definitions.AEParts.GLASS_CABLE.item(appeng.api.util.AEColor.TRANSPARENT));
@@ -722,7 +721,7 @@ public final class MeInterfaceGameTests {
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var planks = appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS);
         h.startSequence()
@@ -735,11 +734,11 @@ public final class MeInterfaceGameTests {
             })
             .thenWaitUntil(() -> {
                 long have = me.mainNode().getGrid().getStorageService().getInventory().getAvailableStacks().get(planks);
-                h.assertTrue(have >= 8, "Planks kept in stock: " + have + " state " + me.logic().status().stock().getFirst());
+                h.assertTrue(have >= 8, "Planks kept in stock: " + have + " state " + me.logic().status().stock().get(0));
             })
             .thenExecute(() -> {
                 var registries = h.getLevel().registryAccess();
-                me.loadCustomOnly(me.saveCustomOnly(registries), registries);
+                me.load(me.saveWithoutMetadata());
                 h.assertTrue(planks.equals(me.logic().stockItem(0)) && me.logic().stockAmount(0) == 8, "Stock setting saved");
             })
             .thenSucceed();
@@ -754,7 +753,7 @@ public final class MeInterfaceGameTests {
         ((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getBlockEntity(furnacePos)).setItem(1, new ItemStack(Items.COAL, 8));
         var card = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(card, h.getLevel(), h.absolutePos(furnacePos), Blocks.FURNACE);
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = (RecipeRackBlockEntity) h.getBlockEntity(RACK);
         rack.items().setStackInSlot(RecipeRackBlockEntity.COLS, card);
         var recipe = new ItemStack(singulo("recipe_card"));
         List<ItemStack> grid = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
@@ -799,7 +798,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
         var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = h.getLevel().getBlockEntity(h.absolutePos(drive)).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.FLUID_CELL_1K.stack(), false).isEmpty(), "fluid cell");
         h.succeedWhen(() -> {
             h.assertTrue(me.mainNode().isActive(), "ME online");
@@ -807,10 +806,10 @@ public final class MeInterfaceGameTests {
             var tag = new net.minecraft.nbt.CompoundTag();
             var list = new net.minecraft.nbt.ListTag();
             list.add(io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
-                new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000)).save(h.getLevel().registryAccess()));
+                new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000)).save(new net.minecraft.nbt.CompoundTag()));
             tag.put("fluidOutputs", list);
             if (me.mainNode().getGrid().getStorageService().getInventory().getAvailableStacks().get(waterKey) == 0)
-                me.queue().load(tag, h.getLevel().registryAccess());
+                me.queue().load(tag);
             long stored = me.mainNode().getGrid().getStorageService().getInventory().getAvailableStacks().get(waterKey);
             h.assertTrue(stored == 2000, "Water in ME: " + stored);
         });
@@ -825,8 +824,8 @@ public final class MeInterfaceGameTests {
         h.assertTrue(me.queue().accept(new ItemStack(Items.OAK_PLANKS), 4, List.of(new ItemStack(Items.OAK_LOG, 2)),
             console.getBlockPos(), now - 200), "push");
         h.runAfterDelay(2, () -> {
-            h.assertTrue(me.queue().jobs().getFirst().submitted(), "Submitted: " + me.queue().jobs());
-            var request = me.queue().jobs().getFirst().request;
+            h.assertTrue(me.queue().jobs().get(0).submitted(), "Submitted: " + me.queue().jobs());
+            var request = me.queue().jobs().get(0).request;
             h.setBlock(REMOTE_ME, Blocks.AIR);
             var orphans = OrphanedEscrows.get(h.getLevel());
             h.assertTrue(orphans.size() >= 1, "Request handed to orphan recovery");

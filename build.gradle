@@ -1,16 +1,21 @@
 plugins {
     id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.148'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.148'
 }
+def selectedLoader = providers.gradleProperty('loader').getOrElse('neoforge')
+if (!(selectedLoader in ['forge', 'neoforge'])) throw new GradleException('Use -Ploader=forge or -Ploader=neoforge')
+def selectedSuffix = selectedLoader == 'forge' ? 'F' : 'N'
+def selectedLoaderVersion = selectedLoader == 'forge' ? forge_version : neoforge_version
+layout.buildDirectory = layout.projectDirectory.dir("build/${selectedLoader}")
 version = mod_version
 group = mod_group_id
 base { archivesName = mod_archive_name }
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 tasks.named('jar', Jar) {
-    archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${mod_loader_suffix}.jar"
+    archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${selectedSuffix}.jar"
     from('LICENSE')
     exclude 'io/github/genichimaruo/appliedsingulo/gametest/**'
-    exclude 'data/applied_singulo/structure/empty.nbt'
+    exclude 'data/applied_singulo/structures/empty.nbt'
 }
 
 // Development dependencies only; never bundled into the addon.
@@ -18,7 +23,7 @@ tasks.named('jar', Jar) {
 // by an exact source commit that is built locally. Missing JARs are prepared in libs/ automatically, so
 // `./gradlew runClient` needs no arguments. -P<property>=<jar> overrides one; overridden JARs are not
 // checked and must not be used for publication.
-def pinnedDependencies = new groovy.json.JsonSlurper().parse(file('tools/dependencies.json'))
+def pinnedDependencies = new groovy.json.JsonSlurper().parse(file('tools/dependencies.json')).findAll { name, spec -> !spec.loader || spec.loader == selectedLoader }
 def dependencyJar = { String name, Map spec ->
     providers.gradleProperty(spec.property).map { file(it) }.getOrElse(file("libs/${name}"))
 }
@@ -80,6 +85,9 @@ def fetchDependencies = tasks.register('fetchDependencies') {
         def marker = file("libs/${name}.commit")
         file("libs/${name}").isFile() && marker.isFile() && marker.text.trim() == spec.commit } }
     doLast {
+        selected.each { name, spec ->
+            if (!spec.sha256 && !spec.commit) throw new GradleException("Pending verified dependency ${name}; supply -P${spec.property}=<development-jar> for local port testing only")
+        }
         overrides.each { property, jar ->
             if (!jar.isFile()) throw new GradleException("Missing -P${property}: ${jar}")
             logger.warn("Using unpinned -P${property}=${jar}; not valid for publication checks")
@@ -115,22 +123,24 @@ def fetchDependencies = tasks.register('fetchDependencies') {
     }
 }
 pinnedDependencies.each { name, spec ->
-    def jar = files(dependencyJar(name, spec)).builtBy(fetchDependencies)
+    def jarFile = dependencyJar(name, spec)
+    repositories { flatDir { dirs jarFile.parentFile } }
     dependencies {
-        compileOnly jar
-        runtimeOnly jar
+        modCompileOnly(group: 'local.pinned', name: jarFile.name - '.jar', version: '1', ext: 'jar')
+        modRuntimeOnly(group: 'local.pinned', name: jarFile.name - '.jar', version: '1', ext: 'jar')
     }
 }
 
-neoForge {
-    version = project.neo_version
+legacyForge {
+    if (selectedLoader == 'forge') version = "${minecraft_version}-${selectedLoaderVersion}"
+    else enable { neoForgeVersion = "${minecraft_version}-${selectedLoaderVersion}" }
     runs {
         client { client() }
         server { server(); programArgument '--nogui' }
         gameTestServer {
             type = 'gameTestServer'
-            gameDirectory = project.file('build/gametest')
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = layout.buildDirectory.dir('gametest')
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
     }
     mods { "${mod_id}" { sourceSet(sourceSets.main) } }
@@ -139,7 +149,7 @@ tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.co
 tasks.named('compileJava') { dependsOn fetchDependencies }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
-    def values = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
+    def values = [minecraft_version_range: minecraft_version_range, forge_version: selectedLoaderVersion,
         loader_version_range: loader_version_range, mod_id: mod_id, mod_name: mod_name,
         mod_version: mod_version, mod_license: mod_license, mod_authors: mod_authors,
         singulo_version_range: singulo_version_range, ae2_version_range: ae2_version_range]
@@ -149,5 +159,10 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
     into layout.buildDirectory.dir('generated/modMetadata')
 }
 sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
+legacyForge.ideSyncTask generateModMetadata
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+tasks.withType(net.neoforged.moddevgradle.legacyforge.tasks.RemapJar).configureEach {
+    archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${selectedSuffix}.jar"
+}
+tasks.withType(JavaCompile).configureEach { options.compilerArgs += ['-Xmaxerrs', '1000'] }
