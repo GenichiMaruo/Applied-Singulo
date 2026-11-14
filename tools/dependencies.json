@@ -4,7 +4,7 @@
     "unreleased": true,
     "note": "Singulo 0.19.0 development API (AndroidEscrows private crafting custody, AndroidOrders.recipes, AndroidSharedStorage). Built from this exact commit; not a release, not hash-pinned. Replace with the published release URL and SHA-256 before publishing Applied Singulo.",
     "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "branch": "feature/0.19.0-shared-storage (local, not pushed; feature/0.19.0 b43db6ba + escrow fix bed2d08b + AndroidSharedStorage + multi-step escrow + large-slot fetch fix + machine/fluid escrow)",
+    "branch": "feature/0.19.0",
     "commit": "d12d72c0b312931276b655bb30062a09be591502",
     "localClone": "../Singulo"
   },

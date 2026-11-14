@@ -13,7 +13,7 @@
 
 ## Singulo dependency
 
-Applied Singulo now requires **Singulo 0.19.0**, for the private crafting escrow (`AndroidEscrows`) and recipe snapshots (`AndroidOrders.recipes`). Singulo 0.19.0 is **not released yet**: `tools/dependencies.json` pins the development commit `d12d72c0...` (see `tools/dependencies.json`) instead of a download URL and hash. It is `feature/0.19.0` (`b43db6ba`) plus the escrow trip-size fix (`bed2d08b`) the `AndroidSharedStorage` API, multi-step escrow, a fetch fix for large slots and machine/fluid escrow, on the local branch `feature/0.19.0-shared-storage`, **not pushed yet**: until it is pushed, only machines whose `../Singulo` clone has the commit (and not CI) can build it.
+Applied Singulo now requires **Singulo 0.19.0**, for the private crafting escrow (`AndroidEscrows`) and recipe snapshots (`AndroidOrders.recipes`). Singulo 0.19.0 is **not released yet**: `tools/dependencies.json` pins the development commit `d12d72c0...` (see `tools/dependencies.json`) instead of a download URL and hash. It is a commit on Singulo `feature/0.19.0` (pushed): the private escrow API plus the escrow trip-size fix, `AndroidSharedStorage`, multi-step escrow, the large-slot fetch fix and machine/fluid escrow.
 
 - `./gradlew runClient` (or any build) runs `fetchDependencies`. It `git archive`s that exact commit from `../Singulo` when that clone has it, or fetches it from GitHub, builds it with Singulo's own wrapper into `libs/Singulo-0.19.0-1.21.1N.jar` (first run only, about 1-2 minutes), and records the commit in `libs/Singulo-0.19.0-1.21.1N.jar.commit`. The Singulo working tree and branches are never touched; changing the pinned commit rebuilds.
 - `-PsinguloJar=/path/Singulo.jar` still overrides it.
