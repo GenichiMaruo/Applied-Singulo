@@ -201,10 +201,10 @@ public final class MeInterfaceGameTests {
         var crafting = new AndroidRecipe("crafting", pos, stone, List.of(item(new ItemStack(Items.COBBLESTONE), 3)), false);
         var recipe = SinguloLinks.convert(crafting);
         h.assertTrue(recipe != null && recipe.inputs().size() == 1 && recipe.inputs().getFirst().count() == 3, "Converted: " + recipe);
-        var pattern = AndroidRecipePattern.of(recipe);
+        var pattern = AndroidRecipePattern.of(recipe, h.getLevel().registryAccess());
         h.assertTrue(pattern != null && pattern.getInputs()[0].getMultiplier() == 3
             && pattern.getOutputs().getFirst().amount() == 2, "Pattern amounts");
-        h.assertTrue(pattern.equals(AndroidRecipePattern.of(recipe)), "Same recipe, same pattern (dedup across interfaces)");
+        h.assertTrue(pattern.equals(AndroidRecipePattern.of(recipe, h.getLevel().registryAccess())), "Same recipe, same pattern (dedup across interfaces)");
 
         var alt = new AndroidRecipe.Material(new ItemStack(Items.OAK_PLANKS), 2,
             List.of(new ItemStack(Items.OAK_PLANKS), new ItemStack(Items.BIRCH_PLANKS)), "{\"tag\":\"minecraft:planks\"}", false, false, false);
@@ -219,7 +219,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(SinguloLinks.convert(machine) == null && SinguloLinks.patternRecipes(List.of(machine)).isEmpty(),
             "Machine recipes must never be advertised as runnable escrow patterns");
         var fluidCrafting = SinguloLinks.convert(new AndroidRecipe("crafting", pos, stone, machine.materials(), false));
-        var fluidPattern = AndroidRecipePattern.of(fluidCrafting);
+        var fluidPattern = AndroidRecipePattern.of(fluidCrafting, h.getLevel().registryAccess());
         h.assertTrue(fluidPattern != null && java.util.Arrays.stream(fluidPattern.getInputs()).anyMatch(in ->
             in.getPossibleInputs()[0].what() instanceof appeng.api.stacks.AEFluidKey && in.getMultiplier() == 250),
             "Plain crafting fluid inputs keep their 250 mB identity");
@@ -469,7 +469,7 @@ public final class MeInterfaceGameTests {
             "5 logs -> 12 fences: " + fenceChain);
         var stickChain = all.stream().filter(r -> r.chained() && r.output().is(Items.STICK)).findFirst().orElseThrow();
         h.assertTrue(stickChain.outputCount() == 8 && stickChain.inputs().getFirst().count() == 1, "1 log -> 8 sticks: " + stickChain);
-        h.assertFalse(AndroidRecipePattern.of(fenceChain).equals(AndroidRecipePattern.of(SinguloLinks.convert(fence))),
+        h.assertFalse(AndroidRecipePattern.of(fenceChain, h.getLevel().registryAccess()).equals(AndroidRecipePattern.of(SinguloLinks.convert(fence), h.getLevel().registryAccess())),
             "The chain and the single step are different AE2 patterns");
 
         // Cycles (ingot <-> block) must never produce a pattern that consumes its own output.

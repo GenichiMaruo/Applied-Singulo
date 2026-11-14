@@ -21,7 +21,7 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 ```sh
 ./gradlew runClient                 # 依存 JAR を自動取得してクライアント起動
 ./gradlew build                     # ビルド
-./gradlew runGameTestServer         # 実依存入り GameTest (40件)
+./gradlew runGameTestServer         # 実依存入り GameTest (45件)
 python3 tools/check_distribution.py # 配布 JAR 検査
 ```
 

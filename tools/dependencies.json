@@ -1,12 +1,14 @@
 {
   "Singulo-0.19.0-1.21.1N.jar": {
     "property": "singuloJar",
+    "url": "https://edge.forgecdn.net/files/9617/80/Singulo-0.19.0-1.21.1N.jar",
+    "sha256": "ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942",
     "unreleased": true,
-    "note": "Tagged Singulo 0.19.0 source. CI run 43628318212 has the same tree and its tested JAR SHA-256 is ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942. Distribution URL is still pending: keep the publication gate closed until the published JAR and hash are verified.",
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "branch": "1.21.1",
-    "commit": "0f6fcff7645a2a5066a072acce55d4a03884080e",
-    "localClone": "../Singulo"
+    "publication_status": "processing",
+    "curseforge_file_id": 9617080,
+    "source_commit": "0f6fcff7645a2a5066a072acce55d4a03884080e",
+    "verified_ci_run": 43628318212,
+    "note": "Official CurseForge CDN bytes match the successful tagged CI JAR exactly. Public listing still awaits approval; release gate remains closed until general availability is verified."
   },
   "appliedenergistics2-19.2.19.jar": {
     "property": "ae2Jar",

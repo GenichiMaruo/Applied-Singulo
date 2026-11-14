@@ -31,4 +31,4 @@ print(f"PASS: {name}; metadata, Java 21, no bundled dependencies")
 unreleased = [k for k, v in json.loads((root / "tools/dependencies.json").read_text()).items() if v.get("unreleased")]
 if unreleased:
     print("NOT PUBLISHABLE: built against unreleased " + ", ".join(unreleased)
-          + "; pin the published release (URL + SHA-256) before any publication")
+          + "; verify general availability and the official URL + SHA-256 before any publication")

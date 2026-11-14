@@ -15,7 +15,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
@@ -44,7 +44,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
 
     /** Null when the recipe cannot be represented exactly (output with data components, zero amounts). */
     @Nullable
-    public static AndroidRecipePattern of(SinguloLinks.PatternRecipe recipe) {
+    public static AndroidRecipePattern of(SinguloLinks.PatternRecipe recipe, HolderLookup.Provider registries) {
         var outputKey = AEItemKey.of(recipe.output());
         if (outputKey == null || outputKey.hasComponents() || recipe.outputCount() <= 0) return null;
         var description = new CompoundTag();
@@ -61,7 +61,8 @@ public final class AndroidRecipePattern implements IPatternDetails {
                 AEKey key = fluid.isEmpty() ? AEItemKey.of(option) : appeng.api.stacks.AEFluidKey.of(fluid);
                 if (key == null || keys.contains(key)) continue;
                 keys.add(key);
-                options.add(StringTag.valueOf(key.getId() + (key.hasComponents() ? "#" + key.hashCode() : "")));
+                // Full key type, registry id and components: hashes are not identities.
+                options.add(key.toTagGeneric(registries));
             }
             if (keys.isEmpty() || in.count() <= 0) return null;
             var entry = new CompoundTag();

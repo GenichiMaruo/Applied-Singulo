@@ -39,9 +39,9 @@ public final class StockPatternGameTests {
             return handler.invoke(p, m, a);
         });
     }
-    private static AndroidRecipePattern pattern(int amount) {
+    private static AndroidRecipePattern pattern(int amount, net.minecraft.core.HolderLookup.Provider registries) {
         return AndroidRecipePattern.of(new SinguloLinks.PatternRecipe(new ItemStack(Items.STONE), amount,
-            List.of(new SinguloLinks.RecipeInput(List.of(new ItemStack(Items.COBBLESTONE)), 1))));
+            List.of(new SinguloLinks.RecipeInput(List.of(new ItemStack(Items.COBBLESTONE)), 1))), registries);
     }
     private static final class Fixture {
         final KeyCounter inventory = new KeyCounter();
@@ -55,7 +55,7 @@ public final class StockPatternGameTests {
             level = h.getLevel();
             var crafting = proxy(ICraftingService.class, (p, m, a) -> switch (m.getName()) {
                 case "isRequesting" -> requesting;
-                case "getCraftingFor" -> List.of(pattern(1));
+                case "getCraftingFor" -> List.of(pattern(1, level.registryAccess()));
                 case "beginCraftingCalculation" -> {
                     calculations++; lastAmount = (long) a[3];
                     pending = new CompletableFuture<>(); yield pending;
@@ -98,7 +98,7 @@ public final class StockPatternGameTests {
         void finishPlan() {
             pending.complete(proxy(ICraftingPlan.class, (p, m, a) -> switch (m.getName()) {
                 case "simulation" -> false;
-                case "patternTimes" -> Map.of(pattern(1), 1L);
+                case "patternTimes" -> Map.of(pattern(1, level.registryAccess()), 1L);
                 default -> null;
             }));
         }
@@ -106,11 +106,11 @@ public final class StockPatternGameTests {
     @GameTest(template = "empty")
     public static void patternRefreshComparesDefinitionsNotDisplayStrings(GameTestHelper h) {
         var f = new Fixture(h);
-        var first = pattern(1); var changed = pattern(2);
+        var first = pattern(1, h.getLevel().registryAccess()); var changed = pattern(2, h.getLevel().registryAccess());
         h.assertTrue(first.getDefinition().toString().equals(changed.getDefinition().toString()), "Regression fixture shares display identity");
         f.replace(List.of(first));
         var original = f.logic.patterns();
-        f.replace(List.of(pattern(1)));
+        f.replace(List.of(pattern(1, h.getLevel().registryAccess())));
         h.assertTrue(original == f.logic.patterns(), "Equal definitions do not replace the provider snapshot");
         f.replace(List.of(changed));
         h.assertTrue(f.logic.patterns().getFirst().outputCount() == 2 && !f.logic.patterns().contains(first), "Same-size changed recipe replaces old definition");

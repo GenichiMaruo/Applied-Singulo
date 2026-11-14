@@ -41,3 +41,10 @@ The fluid-removal regression includes a SavedData save/load round trip before ow
 The stale-pattern rejection runs only for an UNKNOWN escrow ID. If Singulo already accepted that ID,
 the normal replay path clears the stale local offer without refunding a duplicate, even after a rack
 recipe changes. A real accepted-escrow regression covers this save-order scenario.
+
+## Complete recipe identity
+
+Pattern definitions serialize the full AEKey (including components), not a display string or hash.
+Chain material aggregation and producer matching also use full AEKey equality. Early display-string
+deduplication is removed; final complete definitions perform deduplication. Five regressions cover
+item/fluid variants, input acceptance, definition round-trip and chain/list preservation.

@@ -302,7 +302,7 @@ public final class AndroidInterfaceLogic {
         List<AndroidRecipePattern> next = new ArrayList<>();
         if (console != null && queue.owner() != null && server.isLoaded(console)) {
             for (var recipe : SinguloLinks.recipes(server, console, queue.owner())) {
-                var pattern = AndroidRecipePattern.of(recipe);
+                var pattern = AndroidRecipePattern.of(recipe, server.registryAccess());
                 if (pattern != null && !next.contains(pattern)) {
                     next.add(pattern);
                 }

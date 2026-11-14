@@ -13,11 +13,18 @@
 
 ## Singulo dependency
 
-Applied Singulo requires **Singulo 0.19.0**, for private crafting escrow, recipe snapshots and shared-storage identity. The pinned source is tagged commit `0f6fcff7645a2a5066a072acce55d4a03884080e`. Its tree matches successful Singulo CI `43628318212` (`9eb8f4a7ebf43ee9f7ae7a41a7721d4b342c2fe4`). The actual CI JAR was downloaded and SHA-256 verified as `ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942` for compatibility testing.
+Applied Singulo requires **Singulo 0.19.0**. `tools/dependencies.json` now pins the official CurseForge
+CDN file 9617080 and SHA-256 `ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942`.
+Those downloaded bytes match the actual successful Singulo CI 43628318212 JAR byte-for-byte.
+Tag v0.19.0 / commit `0f6fcff7645a2a5066a072acce55d4a03884080e` and tested CI commit have the same tree.
 
-A generally published distribution URL is still pending. The dependency deliberately remains marked `unreleased` for the distribution gate; this is not a claim that the source tag is absent. Before release, replace the source pin with the verified published JAR URL and hash and rerun the checks. Do not publish Applied from a development override.
+The CF file was still Processing at verification. `unreleased: true` deliberately keeps Applied's release
+gate closed until general public availability is confirmed. This flag does not prevent hash-verified
+compatibility tests against the accepted CDN file.
 
-- `./gradlew runClient` (or any build) runs `fetchDependencies`. It `git archive`s that exact commit from `../Singulo` when that clone has it, or fetches it from GitHub, builds it with Singulo's own wrapper into `libs/Singulo-0.19.0-1.21.1N.jar` (first run only, about 1-2 minutes), and records the commit in `libs/Singulo-0.19.0-1.21.1N.jar.commit`. The Singulo working tree and branches are never touched; changing the pinned commit rebuilds.
-- `-PsinguloJar=/path/Singulo.jar` still overrides it.
-- `tools/check_distribution.py` prints **NOT PUBLISHABLE** while any dependency is unreleased. Before publishing, replace the entry with the released Singulo 0.19.0 URL and SHA-256 and re-run the GameTests.
-- The metadata range is `[0.19.0,0.20.0)`.
+- Normal `./gradlew build` / `runGameTestServer` downloads and verifies all three pinned dependencies.
+- Local `-PsinguloJar` overrides remain for development only, not publication preparation.
+- `tools/prepare_release.py` requires the successful GameTest log, all public dependency pins, clean tracked
+  source and the current GitHub Actions commit. Use only a fresh CI build -> tests -> manifest artifact,
+  never an old local JAR relabelled with a new commit.
+- Metadata requires `[0.19.0,0.20.0)`. No Applied CF/Modrinth publication or merge is authorized here.

@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: '3.12'
       - uses: gradle/actions/setup-gradle@v4
-      # Downloads AE2 19.2.19 and GuideME 21.1.1 and verifies their pinned SHA-256. The unreleased Singulo 0.19.0
-      # is fetched at its pinned commit from GitHub and built by the Gradle fetchDependencies task (not yet run in CI).
+      # Downloads only official, SHA-256-pinned JARs. A pending-public dependency may be tested,
+      # but no release receipt is produced until general availability is verified.
       - run: python3 tools/fetch_dependencies.py
       - name: Build and test the addon with real dependencies
         shell: bash
@@ -31,6 +31,17 @@ jobs:
           python3 tools/check_distribution.py
           bash gradlew --no-daemon runGameTestServer 2>&1 | tee build/integration-gametest.log
           python3 tools/check_gametest_log.py build/integration-gametest.log
+      - name: Prepare receipt only after dependency publication
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, subprocess
+          pins = json.load(open('tools/dependencies.json'))
+          if any(p.get('unreleased') for p in pins.values()):
+              print('Release receipt withheld: dependency general publication is still pending')
+          else:
+              subprocess.run(['python3', 'tools/prepare_release.py'], check=True)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: applied-singulo-development
