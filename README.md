@@ -8,11 +8,11 @@ Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネ
 
 - Minecraft **1.20.1** / Forge **47.4.26+** または NeoForge **47.1.106+** / Java **17**
 - **Singulo 0.19.0 (0.19.x)** — 0.19.0 の個別預かり API `AndroidEscrows` を使います。**0.19.0 は未公開**のため、現在は開発版のコミットから自動ビルドして使います。Singulo 0.19.0 が公開されるまで Applied Singulo も公開できません。
-- **AE2 Forge 15.4.12+ (15.x)**。この世代では GuideME の別導入は不要です。
+- **AE2 Forge 15.4.12+ (15.x)**。GuideME **20.1.7+ (20.1.x)** も必須です（AE2実JARの依存指定）。
 
 ## 命名・ブランチ
 
-- 既定・維持ブランチ `1.20.1`、開発ブランチ `review/0.1.0-1201`
+- 既定・維持ブランチ `1.20.1`、開発ブランチ `feature/0.1.0-1.20.1`
 - JAR: `Applied-Singulo-0.1.0-1.20.1F.jar` / `Applied-Singulo-0.1.0-1.20.1N.jar` (`F` = Forge、`N` = NeoForge)。予定公開区分は **Beta**（JAR 名に beta は付けません）。
 - 1.20.1 移植中です。現在の検証状況と依存待ちは [移植記録](docs/0.1.0/port-1.20.1.md) を参照してください。
 

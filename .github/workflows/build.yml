@@ -1,7 +1,7 @@
 name: Build 1.20.1
 on:
   push:
-    branches: ['1.20.1', 'feature/**', 'fix/**', 'review/**']
+    branches: ['1.20.1', 'feature/**', 'fix/**']
   pull_request:
     branches: ['1.20.1']
 permissions:
@@ -34,10 +34,12 @@ jobs:
           python3 tools/check_distribution.py --loader ${{ matrix.loader }}
           bash gradlew --no-daemon runGameTestServer -Ploader=${{ matrix.loader }} 2>&1 | tee build/${{ matrix.loader }}/integration-gametest.log
           python3 tools/check_gametest_log.py build/${{ matrix.loader }}/integration-gametest.log
+          python3 tools/prepare_release.py --loader ${{ matrix.loader }}
       - uses: actions/upload-artifact@v4
         with:
           name: applied-singulo-1.20.1-${{ matrix.loader }}-development
           path: |
             build/${{ matrix.loader }}/libs/Applied-Singulo-*.jar
             build/${{ matrix.loader }}/integration-gametest.log
+            build/${{ matrix.loader }}/release-manifest.json
           if-no-files-found: error

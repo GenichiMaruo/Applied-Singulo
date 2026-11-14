@@ -48,6 +48,7 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
     private record Models(List<ResourceLocation> getModels) implements IPartModel { }
 
     private final AndroidInterfaceLogic logic;
+    private net.minecraftforge.common.util.LazyOptional<IItemHandler> storageCapability;
 
     public AndroidInterfacePart(IPartItem<?> item) {
         super(item);
@@ -78,6 +79,7 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
     public void removeFromWorld() {
         super.removeFromWorld();
         logic.destroy();
+        if (storageCapability != null) { storageCapability.invalidate(); storageCapability = null; }
     }
 
     @Override
@@ -142,7 +144,10 @@ public final class AndroidInterfacePart extends AEBasePart implements AndroidInt
     @Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
             var view = storageView();
-            if (view != null) return net.minecraftforge.common.util.LazyOptional.of(() -> view).cast();
+            if (view != null) {
+                if (storageCapability == null) storageCapability = net.minecraftforge.common.util.LazyOptional.of(() -> view);
+                return storageCapability.cast();
+            }
         }
         return super.getCapability(cap);
     }

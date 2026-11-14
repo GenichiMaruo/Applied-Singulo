@@ -94,7 +94,7 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
         be.logic.tick((ServerLevel) level);
     }
 
-    private final net.minecraftforge.common.util.LazyOptional<IInWorldGridNodeHost> gridCapability = net.minecraftforge.common.util.LazyOptional.of(() -> this);
+    private net.minecraftforge.common.util.LazyOptional<IInWorldGridNodeHost> gridCapability = net.minecraftforge.common.util.LazyOptional.of(() -> this);
     private final java.util.Map<Direction, net.minecraftforge.common.util.LazyOptional<IItemHandler>> itemCapabilities = new java.util.EnumMap<>(Direction.class);
     @Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (isRemoved()) return net.minecraftforge.common.util.LazyOptional.empty();
@@ -105,6 +105,7 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
         }
         return super.getCapability(cap, side);
     }
+    @Override public void reviveCaps() { super.reviveCaps(); gridCapability = net.minecraftforge.common.util.LazyOptional.of(() -> this); }
     @Override public void invalidateCaps() { super.invalidateCaps(); gridCapability.invalidate(); itemCapabilities.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate); itemCapabilities.clear(); }
 
     // ------------------------------------------------------------------ persistence

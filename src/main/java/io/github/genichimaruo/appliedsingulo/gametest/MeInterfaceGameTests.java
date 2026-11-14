@@ -49,6 +49,112 @@ public final class MeInterfaceGameTests {
     private static final BlockPos CONSOLE = new BlockPos(0, 1, 0), SUPPLY = new BlockPos(1, 1, 0), CHEST = new BlockPos(1, 1, 1),
         RACK = new BlockPos(4, 1, 0), TABLE = new BlockPos(4, 1, 3), REMOTE_ME = new BlockPos(6, 1, 6);
 
+    @GameTest(template = "empty")
+    public static void partialOverflowRefundNeverDuplicates(GameTestHelper h) {
+        var q = new AndroidOrderQueue(() -> { });
+        for (int i = 0; i < AndroidOrderQueue.OUTPUT_SLOTS; i++)
+            q.outputBuffer().setStackInSlot(i, new ItemStack(Items.STONE, i == 0 ? 60 : 64));
+        var tag = new net.minecraft.nbt.CompoundTag();
+        q.save(tag);
+        var later = new net.minecraft.nbt.ListTag();
+        later.add(new ItemStack(Items.STONE, 10).save(new net.minecraft.nbt.CompoundTag()));
+        tag.put("returnLater", later);
+        q.load(tag);
+        int[] inserted = {0};
+        for (int i = 0; i < 3; i++) q.sendOutputs(stack -> { inserted[0] += stack.getCount(); return ItemStack.EMPTY; });
+        h.assertTrue(inserted[0] == 2310, "Each item returned exactly once, got " + inserted[0]);
+        h.succeed();
+    }
+
+    private static ItemStack water(int amount) {
+        return AndroidEscrows.fluidSample(new net.minecraftforge.fluids.FluidStack(
+            net.minecraft.world.level.material.Fluids.WATER, amount));
+    }
+
+    @GameTest(template = "empty")
+    public static void partialFluidReturnPersistsEveryTransfer(GameTestHelper h) {
+        int[] dirty = {0};
+        var q = new AndroidOrderQueue(() -> dirty[0]++);
+        q.recoverFluid(water(1000));
+        java.util.function.UnaryOperator<ItemStack> sink = sample -> {
+            int rest = AndroidEscrows.fluidOf(sample).getAmount() - 250;
+            return rest == 0 ? ItemStack.EMPTY : water(rest);
+        };
+        q.sendOutputs(sink);
+        dirty[0] = 0;
+        q.sendOutputs(sink);
+        h.assertTrue(dirty[0] > 0, "Second partial transfer must mark dirty even while still blocked");
+        var tag = new net.minecraft.nbt.CompoundTag();
+        q.save(tag);
+        var restored = new AndroidOrderQueue(() -> { });
+        restored.load(tag);
+        int[] received = {0};
+        restored.sendOutputs(sample -> { received[0] += AndroidEscrows.fluidOf(sample).getAmount(); return ItemStack.EMPTY; });
+        h.assertTrue(received[0] == 500, "Reload kept only the remaining 500 mB");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void cancelledUnsubmittedFluidStaysInFluidCustody(GameTestHelper h) {
+        var q = new AndroidOrderQueue(() -> { });
+        q.setOwner(UUID.randomUUID());
+        q.accept(new ItemStack(Items.STONE), 1, List.of(water(1000)), h.absolutePos(ME), 0);
+        q.cancelAll(h.getLevel(), 1);
+        h.assertTrue(q.outputContents().isEmpty(), "Fluid samples must not enter player item slots");
+        int[] received = {0};
+        for (int i = 0; i < 4; i++) q.sendOutputs(sample -> {
+            int amount = AndroidEscrows.fluidOf(sample).getAmount();
+            received[0] += Math.min(250, amount);
+            return amount <= 250 ? ItemStack.EMPTY : water(amount - 250);
+        });
+        h.assertTrue(received[0] == 1000, "All 1000 mB returned without duplication");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void brokenInterfaceRetainsFluidForSameOwnerReplacement(GameTestHelper h) {
+        var owner = UUID.randomUUID();
+        var pos = h.absolutePos(ME);
+        var q = new AndroidOrderQueue(() -> { });
+        q.setOwner(owner);
+        q.recoverFluid(water(750));
+        h.assertTrue(q.breakDown(h.getLevel(), pos).isEmpty(), "No fake fluid sample item drops");
+        var data = OrphanedEscrows.get(h.getLevel());
+        var tag = data.save(new net.minecraft.nbt.CompoundTag());
+        h.assertTrue(!tag.getList("fluids", net.minecraft.nbt.Tag.TAG_COMPOUND).isEmpty(), "Recovery is persisted");
+        // Clear the live test-world entry, then recover only from the serialized/reloaded copy.
+        data.recover(h.getLevel(), owner, pos, q);
+        q.sendOutputs(sample -> ItemStack.EMPTY);
+        try {
+            var load = OrphanedEscrows.class.getDeclaredMethod("load", net.minecraft.nbt.CompoundTag.class,
+                net.minecraft.core.HolderLookup.Provider.class);
+            load.setAccessible(true);
+            data = (OrphanedEscrows) load.invoke(null, tag);
+        } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+        var replacement = new AndroidOrderQueue(() -> { });
+        int[] received = {0};
+        java.util.function.UnaryOperator<ItemStack> sink = sample -> {
+            received[0] += AndroidEscrows.fluidOf(sample).getAmount(); return ItemStack.EMPTY;
+        };
+        data.recover(h.getLevel(), UUID.randomUUID(), pos, replacement);
+        replacement.sendOutputs(sink);
+        h.assertTrue(received[0] == 0, "Other owner cannot recover fluid");
+        data.recover(h.getLevel(), owner, pos, replacement);
+        replacement.sendOutputs(sink);
+        data.recover(h.getLevel(), owner, pos, replacement);
+        replacement.sendOutputs(sink);
+        h.assertTrue(received[0] == 750, "Owner recovers exactly 750 mB once");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void playerCannotDepositRecipeSampleAsRealFluid(GameTestHelper h) {
+        var q = new AndroidOrderQueue(() -> { });
+        h.assertFalse(q.outputBuffer().insertItem(0, water(1000), false).isEmpty(), "Sample rejected");
+        h.assertTrue(q.outputContents().isEmpty(), "No fluid created from a recipe sample");
+        h.succeed();
+    }
+
     private static List<ItemStack> cobble(int n) { return List.of(new ItemStack(Items.COBBLESTONE, n)); }
 
     @GameTest(template = "empty")

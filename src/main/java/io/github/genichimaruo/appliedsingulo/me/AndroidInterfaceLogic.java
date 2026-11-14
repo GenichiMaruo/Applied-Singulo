@@ -57,7 +57,6 @@ public final class AndroidInterfaceLogic {
     @Nullable private IGridConnection chainLink;
     private int priority;
     private List<AndroidRecipePattern> patterns = List.of();
-    private String patternSignature = "";
     @Nullable private BlockPos patternConsole;
     /** Game time of the last pattern refresh; -1 = refresh on the next tick. */
     private long lastRefresh = -1;
@@ -74,6 +73,16 @@ public final class AndroidInterfaceLogic {
     private final java.util.concurrent.Future<appeng.api.networking.crafting.ICraftingPlan>[] stockCalcs =
         new java.util.concurrent.Future[STOCK_SLOTS];
     private final String[] stockState = new String[STOCK_SLOTS];
+    private final long[] stockRequested = new long[STOCK_SLOTS];
+    private final appeng.api.networking.IGrid[] stockGrids = new appeng.api.networking.IGrid[STOCK_SLOTS];
+
+    private void cancelStockCalculation(int slot) {
+        var pending = stockCalcs[slot];
+        if (pending != null) pending.cancel(true);
+        stockCalcs[slot] = null;
+        stockGrids[slot] = null;
+        stockRequested[slot] = 0;
+    }
 
     /** @param mainNode the host's main node, not created yet: the step provider is added as a service here. */
     public AndroidInterfaceLogic(AndroidInterfaceHost host, IManagedGridNode mainNode) {
@@ -102,7 +111,7 @@ public final class AndroidInterfaceLogic {
         if (slot < 0 || slot >= STOCK_SLOTS) return;
         stockItems[slot] = amount > 0 ? item : null;
         stockAmounts[slot] = item == null ? 0 : Math.max(0, Math.min(amount, 1_000_000L));
-        stockCalcs[slot] = null;
+        cancelStockCalculation(slot);
         stockState[slot] = null;
         host.saveChanges();
     }
@@ -114,17 +123,44 @@ public final class AndroidInterfaceLogic {
      */
     void updateStock(ServerLevel level) {
         var grid = mainNode.getGrid();
-        if (grid == null || !mainNode.isActive()) return;
+        if (grid == null || !mainNode.isActive()) {
+            for (int i = 0; i < STOCK_SLOTS; i++) cancelStockCalculation(i);
+            return;
+        }
         var crafting = grid.getCraftingService();
         var stored = grid.getStorageService().getCachedInventory();
         var source = IActionSource.ofMachine(host);
+        var handled = new java.util.HashMap<AEItemKey, Integer>();
         for (int i = 0; i < STOCK_SLOTS; i++) {
             var key = stockItems[i];
-            if (key == null || stockAmounts[i] <= 0) { stockState[i] = null; continue; }
+            if (key == null || stockAmounts[i] <= 0) {
+                cancelStockCalculation(i);
+                stockState[i] = null;
+                continue;
+            }
+            // Multiple slots are one target, not independent orders. Honour the largest target.
+            var primary = handled.putIfAbsent(key, i);
+            if (primary != null) { cancelStockCalculation(i); stockState[i] = stockState[primary]; continue; }
+            long target = stockAmounts[i];
+            for (int j = i + 1; j < STOCK_SLOTS; j++)
+                if (key.equals(stockItems[j])) target = Math.max(target, stockAmounts[j]);
+            long needed = Math.max(0, target - stored.get(key));
+            if (needed == 0 || crafting.isRequesting(key)) {
+                cancelStockCalculation(i);
+                stockState[i] = needed == 0 ? "ok" : "crafting";
+                continue;
+            }
             var calc = stockCalcs[i];
+            // A calculation belongs to one grid and one deficit; never submit a stale plan.
+            if (calc != null && (stockGrids[i] != grid || stockRequested[i] != needed)) {
+                cancelStockCalculation(i);
+                calc = null;
+            }
             if (calc != null) {
                 if (!calc.isDone()) continue;
                 stockCalcs[i] = null;
+                stockGrids[i] = null;
+                stockRequested[i] = 0;
                 try {
                     var plan = calc.get();
                     if (plan.simulation() || plan.patternTimes().isEmpty()) {
@@ -138,12 +174,11 @@ public final class AndroidInterfaceLogic {
                 }
                 continue;
             }
-            long have = stored.get(key);
-            if (have >= stockAmounts[i]) { stockState[i] = "ok"; continue; }
-            if (crafting.isRequesting(key)) { stockState[i] = "crafting"; continue; }
             if (crafting.getCraftingFor(key).isEmpty()) { stockState[i] = "no_pattern"; continue; }
             appeng.api.networking.crafting.ICraftingSimulationRequester requester = () -> source;
-            stockCalcs[i] = crafting.beginCraftingCalculation(level, requester, key, stockAmounts[i] - have,
+            stockRequested[i] = needed;
+            stockGrids[i] = grid;
+            stockCalcs[i] = crafting.beginCraftingCalculation(level, requester, key, needed,
                 appeng.api.networking.crafting.CalculationStrategy.CRAFT_LESS);
         }
     }
@@ -175,6 +210,7 @@ public final class AndroidInterfaceLogic {
 
     /** Host removed or unloaded. */
     public void destroy() {
+        for (int i = 0; i < STOCK_SLOTS; i++) cancelStockCalculation(i);
         chainLink = null;
         chainNode.destroy();
     }
@@ -262,20 +298,22 @@ public final class AndroidInterfaceLogic {
     public void refreshPatterns() {
         if (!(host.hostLevel() instanceof ServerLevel server)) return;
         var console = queue.console();
-        patternConsole = console;
         List<AndroidRecipePattern> next = new ArrayList<>();
-        var signature = new StringBuilder(String.valueOf(console));
         if (console != null && queue.owner() != null && server.isLoaded(console)) {
             for (var recipe : SinguloLinks.recipes(server, console, queue.owner())) {
                 var pattern = AndroidRecipePattern.of(recipe);
                 if (pattern != null && !next.contains(pattern)) {
                     next.add(pattern);
-                    signature.append('|').append(pattern.getDefinition());
                 }
             }
         }
-        if (!signature.toString().equals(patternSignature)) {
-            patternSignature = signature.toString();
+        replacePatterns(console, next);
+    }
+
+    /** Compare full definition keys, never their display-only toString representation. */
+    private void replacePatterns(@Nullable BlockPos console, List<AndroidRecipePattern> next) {
+        if (!Objects.equals(patternConsole, console) || !patterns.equals(next)) {
+            patternConsole = console;
             patterns = List.copyOf(next);
             ICraftingProvider.requestUpdate(mainNode);
             ICraftingProvider.requestUpdate(chainNode);
@@ -310,6 +348,9 @@ public final class AndroidInterfaceLogic {
         if (!Objects.equals(patternConsole, queue.console())) lastRefresh = -1;
         if (lastRefresh < 0 || time - lastRefresh >= PATTERN_REFRESH) { lastRefresh = time; refreshPatterns(); }
         queue.tick(level, time, host.hostPos().hashCode());
+        if (time % 40 == 0 && queue.owner() != null)
+            io.github.genichimaruo.appliedsingulo.order.OrphanedEscrows.get(level)
+                .recover(level, queue.owner(), host.hostPos(), queue);
         if (time % 5 == 0) queue.sendOutputs(meSink());
         if ((time + host.hostPos().hashCode()) % STOCK_INTERVAL == 0) updateStock(level);
     }
@@ -376,14 +417,8 @@ public final class AndroidInterfaceLogic {
     public List<ItemStack> breakDown() {
         var level = host.hostLevel();
         if (level == null) return List.of();
-        List<ItemStack> drops = new ArrayList<>();
-        var sink = meSink();
-        for (var stack : queue.breakDown(level, host.hostPos())) {
-            // fluids cannot be dropped: put them into ME if it is still online (otherwise they are lost)
-            if (SinguloLinks.isFluid(stack)) { if (sink != null) sink.apply(stack); }
-            else drops.add(stack);
-        }
-        return drops;
+        // Fluids remain in persistent recovery custody until this owner replaces an interface here.
+        return queue.breakDown(level, host.hostPos());
     }
 
     // ------------------------------------------------------------------ status
@@ -464,6 +499,8 @@ public final class AndroidInterfaceLogic {
         queue.load(tag);
         chainNode.loadFromNBT(tag);
         priority = tag.getInt("priority");
+        for (int i = 0; i < STOCK_SLOTS; i++) cancelStockCalculation(i);
+        java.util.Arrays.fill(stockState, null);
         java.util.Arrays.fill(stockItems, null);
         java.util.Arrays.fill(stockAmounts, 0);
         for (var raw : tag.getList("stock", net.minecraft.nbt.Tag.TAG_COMPOUND)) {

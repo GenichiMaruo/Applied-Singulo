@@ -124,7 +124,12 @@ def fetchDependencies = tasks.register('fetchDependencies') {
 }
 pinnedDependencies.each { name, spec ->
     def jarFile = dependencyJar(name, spec)
-    repositories { flatDir { dirs jarFile.parentFile } }
+    repositories {
+        exclusiveContent {
+            forRepository { flatDir { dirs jarFile.parentFile } }
+            filter { includeModule('local.pinned', jarFile.name - '.jar') }
+        }
+    }
     dependencies {
         modCompileOnly(group: 'local.pinned', name: jarFile.name - '.jar', version: '1', ext: 'jar')
         modRuntimeOnly(group: 'local.pinned', name: jarFile.name - '.jar', version: '1', ext: 'jar')

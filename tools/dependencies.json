@@ -15,5 +15,10 @@
     "property": "ae2Jar",
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge/v15.4.12/appliedenergistics2-forge-15.4.12.jar",
     "sha256": "b9c5928893a20d3feb0b4393e2c23d756a16d9abee24d9c14c98e6096d53844d"
+  },
+  "guideme-20.1.7.jar": {
+    "property": "guideMeJar",
+    "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v20.1.7/guideme-20.1.7.jar",
+    "sha256": "f01612808bbd8ea469de26c1970fe6dfb71f4a1fb78311155342fd048a137e95"
   }
 }

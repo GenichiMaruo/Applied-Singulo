@@ -7,6 +7,7 @@
 - Minecraft 1.20.1、Java 17
 - Forge 47.4.26 / NeoForge 47.1.106（同じ net.minecraftforge API の世代）
 - AE2 Forge 15.4.12。公式タグ `forge/v15.4.12`、ソース `5a544ce4aa4d51a1e92a21d316bb89c4a5f4a75a`
+- GuideME 20.1.7（AE215.4.12実JARの必須依存、非同梱）
 - Singulo 0.19.0 の対応ローダー版。AndroidEscrows / AndroidOrders / AndroidSharedStorage が必要。
 
 AE2公式JAR SHA-256:
@@ -26,7 +27,7 @@ AE2公式JAR SHA-256:
 - [ ] Singulo 0.19.0 1.20.1 の実開発JARでコンパイル・GameTest
 - [ ] 本体の確定公開ファイルをURL・SHA-256固定
 - [ ] 全件GameTestをForge/NeoForgeで実行し、配布検査
-- [ ] 親側レビュー修正を同期
+- [x] 親側レビュー修正 `6d66249` を同期（資材返却・液体復旧・在庫二重発行・パターン更新、全39テスト）
 - [ ] draft PR作成（マージ・公開はこの依頼の対象外）
 
 参考:
