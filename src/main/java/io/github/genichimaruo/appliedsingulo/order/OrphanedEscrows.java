@@ -23,6 +23,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 public final class OrphanedEscrows extends SavedData {
     private static final String NAME = "applied_singulo_orphaned_escrows";
     static final int INTERVAL = 40;
+    private static final net.minecraft.world.level.saveddata.SavedDataType<OrphanedEscrows> TYPE =
+        new net.minecraft.world.level.saveddata.SavedDataType<>(net.minecraft.resources.Identifier.fromNamespaceAndPath("applied_singulo", "orphaned_escrows"),
+            level -> new OrphanedEscrows(), level -> CompoundTag.CODEC.xmap(
+                tag -> load(tag, level.registryAccess()), data -> data.save(new CompoundTag(), level.registryAccess())));
 
     private record Entry(UUID owner, UUID request, BlockPos pos) { }
     private final List<Entry> entries = new ArrayList<>();
@@ -62,7 +66,7 @@ public final class OrphanedEscrows extends SavedData {
     }
 
     public static OrphanedEscrows get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(OrphanedEscrows::new, OrphanedEscrows::load), NAME);
+        return level.getDataStorage().computeIfAbsent(TYPE);
     }
 
     void add(UUID owner, UUID request, BlockPos pos) {
@@ -74,7 +78,7 @@ public final class OrphanedEscrows extends SavedData {
 
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % INTERVAL != 0) return;
-        var data = level.getDataStorage().get(new SavedData.Factory<>(OrphanedEscrows::new, OrphanedEscrows::load), NAME);
+        var data = level.getDataStorage().get(TYPE);
         if (data != null && !data.entries.isEmpty()) data.process(level);
     }
 
@@ -104,13 +108,12 @@ public final class OrphanedEscrows extends SavedData {
         }
     }
 
-    @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         var list = new ListTag();
         for (var e : entries) {
             var t = new CompoundTag();
-            t.putUUID("owner", e.owner);
-            t.putUUID("request", e.request);
+            t.store("owner", net.minecraft.core.UUIDUtil.CODEC, e.owner);
+            t.store("request", net.minecraft.core.UUIDUtil.CODEC, e.request);
             t.putLong("pos", e.pos.asLong());
             list.add(t);
         }
@@ -118,9 +121,9 @@ public final class OrphanedEscrows extends SavedData {
         var buffered = new ListTag();
         for (var f : fluids) {
             var t = new CompoundTag();
-            t.putUUID("owner", f.owner);
+            t.store("owner", net.minecraft.core.UUIDUtil.CODEC, f.owner);
             t.putLong("pos", f.pos.asLong());
-            t.put("sample", f.sample.save(registries));
+            t.put("sample", ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), f.sample).getOrThrow());
             buffered.add(t);
         }
         tag.put("fluids", buffered);
@@ -129,16 +132,16 @@ public final class OrphanedEscrows extends SavedData {
 
     private static OrphanedEscrows load(CompoundTag tag, HolderLookup.Provider registries) {
         var data = new OrphanedEscrows();
-        for (Tag raw : tag.getList("entries", Tag.TAG_COMPOUND)) {
+        for (Tag raw : tag.getListOrEmpty("entries")) {
             var t = (CompoundTag) raw;
-            if (t.hasUUID("owner") && t.hasUUID("request"))
-                data.entries.add(new Entry(t.getUUID("owner"), t.getUUID("request"), BlockPos.of(t.getLong("pos"))));
+            if (t.read("owner", net.minecraft.core.UUIDUtil.CODEC).isPresent() && t.read("request", net.minecraft.core.UUIDUtil.CODEC).isPresent())
+                data.entries.add(new Entry(t.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), t.read("request", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), BlockPos.of(t.getLongOr("pos", 0L))));
         }
-        for (Tag raw : tag.getList("fluids", Tag.TAG_COMPOUND)) {
+        for (Tag raw : tag.getListOrEmpty("fluids")) {
             var t = (CompoundTag) raw;
-            var sample = ItemStack.parseOptional(registries, t.getCompound("sample"));
-            if (t.hasUUID("owner") && SinguloLinks.isFluid(sample))
-                data.fluids.add(new BufferedFluid(t.getUUID("owner"), BlockPos.of(t.getLong("pos")), sample));
+            var sample = ItemStack.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), t.getCompoundOrEmpty("sample")).result().orElse(ItemStack.EMPTY);
+            if (t.read("owner", net.minecraft.core.UUIDUtil.CODEC).isPresent() && SinguloLinks.isFluid(sample))
+                data.fluids.add(new BufferedFluid(t.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), BlockPos.of(t.getLongOr("pos", 0L)), sample));
         }
         return data;
     }

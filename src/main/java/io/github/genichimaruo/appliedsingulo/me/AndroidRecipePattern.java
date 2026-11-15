@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -62,7 +62,7 @@ public final class AndroidRecipePattern implements IPatternDetails {
                 if (key == null || keys.contains(key)) continue;
                 keys.add(key);
                 // Full key type, registry id and components: hashes are not identities.
-                options.add(key.toTagGeneric(registries));
+                options.add(AEKey.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), key).getOrThrow());
             }
             if (keys.isEmpty() || in.count() <= 0) return null;
             var entry = new CompoundTag();

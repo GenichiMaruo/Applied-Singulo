@@ -5,7 +5,7 @@ plugins {
 version = mod_version
 group = mod_group_id
 base { archivesName = mod_archive_name }
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 tasks.named('jar', Jar) {
     archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${mod_loader_suffix}.jar"
     from('LICENSE')
@@ -76,10 +76,12 @@ def fetchDependencies = tasks.register('fetchDependencies') {
         .collectEntries { name, spec -> [(spec.property): dependencyJar(name, spec)] }
     inputs.file('tools/dependencies.json')
     outputs.files(selected.keySet().collect { file("libs/${it}") })
-    outputs.upToDateWhen { sourceBuilt.every { name, spec ->
+    outputs.upToDateWhen { !selected.any { name, spec -> spec.pending } && sourceBuilt.every { name, spec ->
         def marker = file("libs/${name}.commit")
         file("libs/${name}").isFile() && marker.isFile() && marker.text.trim() == spec.commit } }
     doLast {
+        def unresolved = selected.findAll { name, spec -> spec.pending }.keySet()
+        if (!unresolved.isEmpty()) throw new GradleException("26.1.2 port blocked: matching Singulo artifact has not been verified: ${unresolved}. See docs/port-26.1.2.md. Do not use a 1.21.1 runtime.")
         overrides.each { property, jar ->
             if (!jar.isFile()) throw new GradleException("Missing -P${property}: ${jar}")
             logger.warn("Using unpinned -P${property}=${jar}; not valid for publication checks")
@@ -131,6 +133,7 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = project.file('build/gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'applied_singulo.gametest', 'true'
         }
     }
     mods { "${mod_id}" { sourceSet(sourceSets.main) } }

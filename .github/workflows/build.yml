@@ -1,9 +1,9 @@
 name: Build
 on:
   push:
-    branches: ['1.21.1', 'feature/**', 'fix/**']
+    branches: ['26.1.2', 'port/26.1.2']
   pull_request:
-    branches: ['1.21.1']
+    branches: ['26.1.2']
 permissions:
   contents: read
 jobs:
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

@@ -6,16 +6,16 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import io.github.genichimaruo.appliedsingulo.integration.PatternOrderRequest;
 import java.util.List;
-import net.minecraft.gametest.framework.GameTest;
+
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("applied_singulo")
-@PrefixGameTestTemplate(false)
+
+
+
+
 public final class PatternRequestGameTests {
     private static ItemStack pattern(long output) {
         return PatternDetailsHelper.encodeProcessingPattern(

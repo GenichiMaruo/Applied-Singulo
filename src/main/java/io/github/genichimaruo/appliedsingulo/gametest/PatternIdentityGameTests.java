@@ -8,7 +8,7 @@ import io.github.genichimaruo.appliedsingulo.order.SinguloLinks;
 import io.github.genichimaruo.singulo.api.android.AndroidEscrows;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.gametest.framework.GameTest;
+
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -17,11 +17,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("applied_singulo")
-@PrefixGameTestTemplate(false)
+
+
+
+
 public final class PatternIdentityGameTests {
     private static CustomData data(String value) {
         var tag = new CompoundTag(); tag.putString("variant", value); return CustomData.of(tag);
@@ -38,9 +38,9 @@ public final class PatternIdentityGameTests {
         h.assertTrue(pa.getInputs()[0].isValid(ka, h.getLevel()) && !pa.getInputs()[0].isValid(kb, h.getLevel()), "A accepts only A");
         h.assertTrue(pb.getInputs()[0].isValid(kb, h.getLevel()) && !pb.getInputs()[0].isValid(ka, h.getLevel()), "B accepts only B");
         var definition = pa.getDefinition().toStack().get(DataComponents.CUSTOM_DATA).copyTag();
-        var encoded = definition.getList("inputs", Tag.TAG_COMPOUND).getCompound(0)
-            .getList("options", Tag.TAG_COMPOUND).getCompound(0);
-        h.assertTrue(ka.equals(AEKey.fromTagGeneric(h.getLevel().registryAccess(), encoded)), "Definition must contain full reversible key, not hash or display text");
+        var encoded = definition.getListOrEmpty("inputs").getCompoundOrEmpty(0)
+            .getListOrEmpty("options").getCompoundOrEmpty(0);
+        h.assertTrue(ka.equals(AEKey.fromTagGeneric(io.github.genichimaruo.appliedsingulo.compat.TagBridge.input(encoded, h.getLevel().registryAccess()))), "Definition must contain full reversible key, not hash or display text");
         h.succeed();
     }
     @GameTest(template = "empty")

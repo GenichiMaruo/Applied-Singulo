@@ -74,13 +74,13 @@ public final class AndroidOrderCommands {
         var pos = console(context, player);
         PatternOrderRequest request;
         try {
-            request = PatternOrderRequest.decode(player.getMainHandItem(), player.serverLevel(),
+            request = PatternOrderRequest.decode(player.getMainHandItem(), player.level(),
                 IntegerArgumentType.getInteger(context, "batches"));
         } catch (IllegalArgumentException invalid) {
             context.getSource().sendFailure(Component.literal(invalid.getMessage()));
             return 0;
         }
-        var receipt = AndroidOrders.submit(player.serverLevel(), pos, player.getUUID(),
+        var receipt = AndroidOrders.submit(player.level(), pos, player.getUUID(),
             UuidArgument.getUuid(context, "request"), request.target(), request.count(), List.of(), null);
         return show(context.getSource(), receipt);
     }
@@ -91,21 +91,21 @@ public final class AndroidOrderCommands {
         var pos = console(context, player);
         var id = UuidArgument.getUuid(context, "request");
         if (action.equals("acknowledge")) {
-            boolean removed = AndroidOrders.acknowledge(player.serverLevel(), pos, player.getUUID(), id);
+            boolean removed = AndroidOrders.acknowledge(player.level(), pos, player.getUUID(), id);
             if (removed) context.getSource().sendSuccess(() -> Component.literal(
                 "Terminal receipt acknowledged. Never reuse this request UUID."), false);
             else context.getSource().sendFailure(Component.literal("Receipt not acknowledged"));
             return removed ? Command.SINGLE_SUCCESS : 0;
         }
         return show(context.getSource(), action.equals("cancel")
-            ? AndroidOrders.cancel(player.serverLevel(), pos, player.getUUID(), id)
-            : AndroidOrders.status(player.serverLevel(), pos, player.getUUID(), id));
+            ? AndroidOrders.cancel(player.level(), pos, player.getUUID(), id)
+            : AndroidOrders.status(player.level(), pos, player.getUUID(), id));
     }
 
     /** Owner-only overview of every external receipt on a console (Singulo 0.18.0 snapshot API). */
     private static int snapshot(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var player = context.getSource().getPlayerOrException();
-        var snap = AndroidOrders.snapshot(player.serverLevel(), console(context, player), player.getUUID());
+        var snap = AndroidOrders.snapshot(player.level(), console(context, player), player.getUUID());
         var source = context.getSource();
         if (snap.state() != AndroidOrders.SnapshotState.AVAILABLE) {
             source.sendFailure(Component.literal("Snapshot " + snap.state()));
@@ -132,7 +132,7 @@ public final class AndroidOrderCommands {
     private static int androidInterface(CommandContext<CommandSourceStack> context, boolean cancel) throws CommandSyntaxException {
         var player = context.getSource().getPlayerOrException();
         var pos = nearby(context, player, "interface");
-        var hosts = interfacesAt(player.serverLevel(), pos);
+        var hosts = interfacesAt(player.level(), pos);
         if (hosts.isEmpty()) {
             context.getSource().sendFailure(Component.literal("No Android ME Interface at " + pos.toShortString()));
             return 0;

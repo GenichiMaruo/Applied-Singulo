@@ -3,7 +3,7 @@ package io.github.genichimaruo.appliedsingulo.me;
 import appeng.api.networking.security.IActionHost;
 import appeng.helpers.IPriorityHost;
 import appeng.menu.ISubMenu;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;

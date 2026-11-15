@@ -1,6 +1,6 @@
 package io.github.genichimaruo.appliedsingulo.client;
 
-import appeng.init.client.InitScreens;
+import appeng.client.InitScreens;
 import io.github.genichimaruo.appliedsingulo.registry.ModContent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -11,6 +11,11 @@ public final class ClientSetup {
 
     public static void init(IEventBus modBus) {
         modBus.addListener(ClientSetup::registerScreens);
+        modBus.addListener(ClientSetup::registerPartRenderers);
+    }
+
+    private static void registerPartRenderers(appeng.client.api.renderer.parts.RegisterPartRendererEvent event) {
+        event.register(io.github.genichimaruo.appliedsingulo.me.AndroidOrderMonitorPart.class, new AndroidOrderMonitorRenderer());
     }
 
     private static void registerScreens(RegisterMenuScreensEvent event) {

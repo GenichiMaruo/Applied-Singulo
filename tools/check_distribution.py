@@ -20,14 +20,14 @@ with zipfile.ZipFile(root / "build/libs" / name) as z:
     d = {v["modId"]: v for v in m["dependencies"]["applied_singulo"]}
     assert set(d) == {"minecraft", "neoforge", "singulo", "ae2"}
     assert all(v["type"] == "required" for v in d.values())
-    assert d["minecraft"]["versionRange"] == "[1.21.1]"
+    assert d["minecraft"]["versionRange"] == p["minecraft_version_range"]
     assert d["singulo"]["versionRange"] == p["singulo_version_range"]
     assert d["ae2"]["versionRange"] == p["ae2_version_range"]
-    assert json.loads(z.read("pack.mcmeta"))["pack"]["pack_format"] == 34
+    assert json.loads(z.read("pack.mcmeta"))["pack"]["pack_format"] == 84
     assert not any(n.startswith(("appeng/", "io/github/genichimaruo/singulo/")) or n.endswith(".jar") for n in names)
     for n in names:
-        if n.endswith(".class"): assert int.from_bytes(z.read(n)[6:8], "big") == 65, n
-print(f"PASS: {name}; metadata, Java 21, no bundled dependencies")
+        if n.endswith(".class"): assert int.from_bytes(z.read(n)[6:8], "big") == 69, n
+print(f"PASS: {name}; metadata, Java 25, no bundled dependencies")
 unreleased = [k for k, v in json.loads((root / "tools/dependencies.json").read_text()).items() if v.get("unreleased")]
 if unreleased:
     print("NOT PUBLISHABLE: built against unreleased " + ", ".join(unreleased)

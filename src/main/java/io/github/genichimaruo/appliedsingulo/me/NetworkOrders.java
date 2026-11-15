@@ -2,7 +2,7 @@ package io.github.genichimaruo.appliedsingulo.me;
 
 import appeng.api.networking.IGrid;
 import io.github.genichimaruo.appliedsingulo.order.OrderJob;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 /**

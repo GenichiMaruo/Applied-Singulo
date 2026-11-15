@@ -18,17 +18,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
+
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+
 
 /** Deterministic tests of async planning races, using real AE keys/patterns and controlled service futures. */
-@GameTestHolder("applied_singulo")
-@PrefixGameTestTemplate(false)
+
+
 public final class StockPatternGameTests {
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, InvocationHandler handler) {

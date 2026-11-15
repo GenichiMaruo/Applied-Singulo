@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
@@ -35,7 +35,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
         super(menu, playerInventory, title, style);
         widgets.addOpenPriorityButton();
         cancelAll = widgets.addButton("cancelAll", Component.translatable("gui.applied_singulo.cancel_all"), () -> {
-            if (hasShiftDown()) menu.cancelAll();
+            if (minecraft.hasShiftDown()) menu.cancelAll();
         });
     }
 
@@ -49,7 +49,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     private int color(PaletteColor c) { return style.getColor(c).toARGB(); }
 
     @Override
-    public void drawFG(GuiGraphics g, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(GuiGraphicsExtractor g, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(g, offsetX, offsetY, mouseX, mouseY);
         var s = menu.status;
         int text = color(PaletteColor.DEFAULT_TEXT_COLOR), muted = color(PaletteColor.MUTED_TEXT_COLOR);
@@ -70,7 +70,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
             : !s.problem().isEmpty() ? reason(s.problem()) : null;
         if (warning != null) {   // wrap instead of cutting off (two lines fit above the orders row)
             var lines = font.split(warning, 160);
-            for (int i = 0; i < Math.min(2, lines.size()); i++) g.drawString(font, lines.get(i), 8, 40 + i * 9, RED, false);
+            for (int i = 0; i < Math.min(2, lines.size()); i++) g.text(font, lines.get(i), 8, 40 + i * 9, RED, false);
         }
         if (mx >= 6 && mx < 170 && my >= 16 && my < 50) hoverTooltip = details(s);
 
@@ -80,8 +80,8 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
             var job = s.jobs().get(i);
             int x = SLOTS_X + i * SLOT;
             var stack = item(job.item());
-            g.renderItem(stack, x, JOBS_Y);
-            g.renderItemDecorations(font, stack, x, JOBS_Y, shortCount(job.count()));
+            g.item(stack, x, JOBS_Y);
+            g.itemDecorations(font, stack, x, JOBS_Y, shortCount(job.count()));
             g.fill(x, JOBS_Y + 15, x + 16, JOBS_Y + 16, 0xFF000000 | stateColor(job));   // state bar, like AE2's status indicators
             if (inside(mx, my, x, JOBS_Y)) {
                 g.fill(x, JOBS_Y, x + 16, JOBS_Y + 16, 0x80FFFFFF);
@@ -99,8 +99,8 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
             int x = SLOTS_X + i * SLOT;
             if (!k.item().isEmpty()) {
                 var stack = item(k.item());
-                g.renderItem(stack, x, STOCK_Y);
-                g.renderItemDecorations(font, stack, x, STOCK_Y, shortCount(k.target()));
+                g.item(stack, x, STOCK_Y);
+                g.itemDecorations(font, stack, x, STOCK_Y, shortCount(k.target()));
                 int bar = switch (k.state()) {
                     case "ok" -> 0xFF3AB04A;
                     case "crafting" -> 0xFF3AA0D0;
@@ -122,9 +122,9 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTicks) {
-        super.render(g, mouseX, mouseY, partialTicks);
-        if (!hoverTooltip.isEmpty()) g.renderComponentTooltip(font, hoverTooltip, mouseX, mouseY);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTicks) {
+        super.extractRenderState(g, mouseX, mouseY, partialTicks);
+        if (!hoverTooltip.isEmpty()) drawTooltip(g, mouseX, mouseY, hoverTooltip);
     }
 
     private List<Component> stockTooltip(InterfaceStatus.Stock k) {
@@ -149,7 +149,9 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         int slot = stockSlotAt(mouseX, mouseY);
         if (slot >= 0) {
             var carried = menu.getCarried();
@@ -161,7 +163,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
@@ -170,7 +172,7 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
         if (slot >= 0 && slot < menu.status.stock().size()) {
             var k = menu.status.stock().get(slot);
             if (!k.item().isEmpty() && scrollY != 0) {
-                long step = hasShiftDown() ? 64 : 1;
+                long step = minecraft.hasShiftDown() ? 64 : 1;
                 long amount = Math.max(1, k.target() + (scrollY > 0 ? step : -step));
                 menu.setStock(new AndroidInterfaceMenu.StockAction(slot, k.item(), amount));
             }
@@ -244,13 +246,13 @@ public final class AndroidInterfaceScreen extends AEBaseScreen<AndroidInterfaceM
     }
 
     private static ItemStack item(String id) {
-        var rl = ResourceLocation.tryParse(id);
-        return rl == null ? ItemStack.EMPTY : BuiltInRegistries.ITEM.get(rl).getDefaultInstance();
+        var rl = Identifier.tryParse(id);
+        return rl == null ? ItemStack.EMPTY : BuiltInRegistries.ITEM.getOptional(rl).map(net.minecraft.world.item.Item::getDefaultInstance).orElse(ItemStack.EMPTY);
     }
 
     /** Draw text clipped at {@code right}. */
-    private void draw(GuiGraphics g, Component text, int x, int y, int color, int right) {
+    private void draw(GuiGraphicsExtractor g, Component text, int x, int y, int color, int right) {
         var clipped = font.substrByWidth(text, right - x);
-        g.drawString(font, net.minecraft.locale.Language.getInstance().getVisualOrder(clipped), x, y, color, false);
+        g.text(font, net.minecraft.locale.Language.getInstance().getVisualOrder(clipped), x, y, color, false);
     }
 }
