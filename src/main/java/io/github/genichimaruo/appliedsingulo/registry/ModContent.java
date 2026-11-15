@@ -101,11 +101,11 @@ public final class ModContent {
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, ANDROID_ME_INTERFACE_ENTITY.get(),
             (me, context) -> me);
         // The ME network as Singulo storage (only towards the owner's Supply Ports / Work Console).
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ANDROID_ME_INTERFACE_ENTITY.get(),
+        event.registerBlockEntity(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, ANDROID_ME_INTERFACE_ENTITY.get(),
             AndroidMeInterfaceBlockEntity::storageView);
     }
 
     private static void registerPartCapabilities(RegisterPartCapabilitiesEvent event) {
-        event.register(Capabilities.ItemHandler.BLOCK, (part, side) -> part.storageView(), AndroidInterfacePart.class);
+        event.register(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, (part, side) -> part.storageView(), AndroidInterfacePart.class);
     }
 }

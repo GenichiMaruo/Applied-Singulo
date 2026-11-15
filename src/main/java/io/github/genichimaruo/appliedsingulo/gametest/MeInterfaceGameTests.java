@@ -245,7 +245,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(h.getLevel().getCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST, h.absolutePos(ME), null) != null,
             "Cables must be able to connect");
         for (var side : Direction.values()) {
-            var view = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(ME), side);
+            var view = h.getLevel().getCapability(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, h.absolutePos(ME), side);
             h.assertTrue(view == null || view.getSlots() == 0,
                 "Without an owner and an online ME network, no face may show or accept anything");
         }

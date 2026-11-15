@@ -53,3 +53,12 @@ No distributable 26.1.2 JAR or passing game test run exists yet. Packaging check
 until a correctly built artifact exists. Existing 1.21.1 / 1.20.1 branches are untouched.
 
 Latest diagnostic compile: 3 errors, all removed Capabilities.ItemHandler references (2 registrations + 1 access test). Other migrated sources compile against official 26.1.2/AE2 dependencies and the explicitly overridden old API JAR; this does not prove compatibility with the unfinished new Singulo API. Default dependency guard rejects the unresolved artifact as expected.
+
+## Shared storage follow-up
+
+The shared registration now targets Singulo's explicitly separate
+`AndroidStorageCapabilities.SHARED_ITEMS` (`singulo:android_shared_storage`, IItemHandler).
+The matching API and native-to-legacy root-transaction adapter were added to the Singulo
+26.1.2 development worktree. These changes require a new verified Singulo build; the
+legacy 1.21.1 diagnostic JAR does not contain this API. The default pending dependency
+and publication guard remain in force. Owner and network-key checks remain in MeStorageView.
