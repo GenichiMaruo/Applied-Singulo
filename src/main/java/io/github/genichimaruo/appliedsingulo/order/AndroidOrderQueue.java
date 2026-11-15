@@ -253,6 +253,14 @@ public final class AndroidOrderQueue {
             };
             job.finishedAt = now;
             if (receipt.reason() != null) job.reason = receipt.reason();
+            else {
+                // Escrow snapshots in Singulo 0.19.0 omit the console's terminal reason.
+                // Read it before acknowledge removes that receipt; this is diagnostic only.
+                var detail = AndroidOrders.status(level, job.console, owner, job.request);
+                if (detail.state() == receipt.state() && detail.reason() != null) job.reason = detail.reason();
+            }
+            if (job.state != OrderJob.State.COMPLETED)
+                LOGGER.warn("Android escrow request {} terminated: {}", job.request, job);
         }
         job.claimedProducts += claim(level, job.request, true, snap.products());
         boolean refundable = (snap.phase() == AndroidEscrows.Phase.COMPLETED || snap.phase() == AndroidEscrows.Phase.RECOVERABLE)

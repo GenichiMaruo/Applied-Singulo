@@ -918,6 +918,29 @@ public final class MeInterfaceGameTests {
         h.succeed();
     }
 
+    /** The escrow snapshot omits reasons in 0.19.0; preserve the console receipt before acknowledgement. */
+    @GameTest(template = "empty", timeoutTicks = 1200)
+    public static void failedEscrowPreservesConsoleReasonBeforeAcknowledgement(GameTestHelper h) {
+        var console = workshop(h, true);
+        var q = new AndroidOrderQueue(() -> { });
+        q.setOwner(console.owner());
+        long now = h.getLevel().getGameTime();
+        h.assertTrue(q.accept(new ItemStack(Items.OAK_PLANKS), 4, List.of(new ItemStack(Items.OAK_LOG)),
+            console.getBlockPos(), now - 200), "Accepted locally");
+        var job = q.jobs().get(0);
+        q.tick(h.getLevel(), now, 0);
+        var receipt = AndroidEscrows.snapshot(h.getLevel(), console.owner(), job.request).receipt();
+        console.cancel(receipt.orderId(), net.minecraft.network.chat.Component.literal("test_terminal_reason"));
+        q.tick(h.getLevel(), now + 20, (int) Math.floorMod(-now, 20));
+        h.assertTrue(job.state() == OrderJob.State.FAILED && "test_terminal_reason".equals(job.reason()),
+            "Terminal reason retained: " + job);
+        h.succeedWhen(() -> {
+            long tick = h.getLevel().getGameTime();
+            q.tick(h.getLevel(), tick, (int) Math.floorMod(-tick, 20));
+            h.assertTrue(q.jobs().isEmpty() && count(q.outputContents(), Items.OAK_LOG) == 1,
+                "Inputs refunded exactly once and request acknowledged");
+        });
+    }
     /** AE2 fluid inputs become Singulo fluid samples, batch by amount, and claimed fluids go back into ME as fluids. */
     @GameTest(template = "empty", timeoutTicks = 400)
     public static void fluidsTravelBetweenMeAndSinguloAsFluids(GameTestHelper h) {
