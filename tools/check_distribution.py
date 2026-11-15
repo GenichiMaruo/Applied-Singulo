@@ -9,8 +9,12 @@ name = f"{p['mod_archive_name']}-{p['mod_version']}-{p['minecraft_version']}{p['
 with zipfile.ZipFile(root / "build/libs" / name) as z:
     names = z.namelist()
     assert "LICENSE" in names
+    assert z.read("applied-singulo.png") == (root / "src/main/resources/applied-singulo.png").read_bytes()
+    assert not any("/gametest/" in n for n in names)
+    assert "data/applied_singulo/structure/empty.nbt" not in names
     assert "io/github/genichimaruo/appliedsingulo/AppliedSingulo.class" in names
     m = tomllib.loads(z.read("META-INF/neoforge.mods.toml").decode())
+    assert m["mods"][0]["logoFile"] == "applied-singulo.png"
     assert m["mods"][0]["modId"] == "applied_singulo"
     assert m["mods"][0]["version"] == p["mod_version"]
     d = {v["modId"]: v for v in m["dependencies"]["applied_singulo"]}
@@ -24,3 +28,7 @@ with zipfile.ZipFile(root / "build/libs" / name) as z:
     for n in names:
         if n.endswith(".class"): assert int.from_bytes(z.read(n)[6:8], "big") == 65, n
 print(f"PASS: {name}; metadata, Java 21, no bundled dependencies")
+unreleased = [k for k, v in json.loads((root / "tools/dependencies.json").read_text()).items() if v.get("unreleased")]
+if unreleased:
+    print("NOT PUBLISHABLE: built against unreleased " + ", ".join(unreleased)
+          + "; verify general availability and the official URL + SHA-256 before any publication")

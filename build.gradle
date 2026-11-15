@@ -9,23 +9,119 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 tasks.named('jar', Jar) {
     archiveFileName = "${mod_archive_name}-${mod_version}-${minecraft_version}${mod_loader_suffix}.jar"
     from('LICENSE')
+    exclude 'io/github/genichimaruo/appliedsingulo/gametest/**'
+    exclude 'data/applied_singulo/structure/empty.nbt'
 }
-// Development dependencies only; do not bundle into the addon.
-['singuloJar', 'ae2Jar', 'guideMeJar'].each { key ->
-    if (providers.gradleProperty(key).isPresent()) {
-        def dependencyJar = file(providers.gradleProperty(key).get())
-        if (!dependencyJar.isFile()) throw new GradleException("Missing ${key}: ${dependencyJar}")
-        dependencies { compileOnly files(dependencyJar); runtimeOnly files(dependencyJar) }
+
+// Development dependencies only; never bundled into the addon.
+// tools/dependencies.json pins each mod either by official download URL + SHA-256, or (unreleased APIs)
+// by an exact source commit that is built locally. Missing JARs are prepared in libs/ automatically, so
+// `./gradlew runClient` needs no arguments. -P<property>=<jar> overrides one; overridden JARs are not
+// checked and must not be used for publication.
+def pinnedDependencies = new groovy.json.JsonSlurper().parse(file('tools/dependencies.json'))
+def dependencyJar = { String name, Map spec ->
+    providers.gradleProperty(spec.property).map { file(it) }.getOrElse(file("libs/${name}"))
+}
+def runCommand = { List<String> command, File dir ->
+    def process = new ProcessBuilder(command.collect { it.toString() }).directory(dir).inheritIO().start()
+    if (process.waitFor() != 0) throw new GradleException("Command failed (${process.exitValue()}): ${command.join(' ')}")
+}
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+// Unreleased dependency: `git archive` of the pinned commit (from a local clone if it has the commit,
+// otherwise fetched from the repository), built with its own wrapper. A marker records the commit so a
+// changed pin rebuilds. The local clone's working tree and branches are never touched.
+def buildFromSource = { String name, Map spec ->
+    def jar = file("libs/${name}")
+    def marker = file("libs/${name}.commit")
+    if (jar.isFile() && marker.isFile() && marker.text.trim() == spec.commit) return
+    def src = file("build/dependency-src/${name - '.jar'}-${spec.commit.take(12)}")
+    if (!new File(src, 'gradlew').isFile()) {
+        project.delete(src)
+        src.mkdirs()
+        def zip = file("${src.path}.zip")
+        def clone = file(spec.localClone ?: 'missing-clone')
+        def hasCommit = new File(clone, '.git').exists() &&
+            new ProcessBuilder(["git", "-C", clone.path, "cat-file", "-e", spec.commit + "^{commit}"]).start().waitFor() == 0
+        if (hasCommit) {
+            logger.lifecycle("Archiving ${spec.commit.take(12)} from ${clone}")
+            runCommand(['git', '-C', clone.path, 'archive', '-o', zip.path, spec.commit], projectDir)
+        } else {
+            def fetched = file("${src.path}-git")
+            project.delete(fetched)
+            fetched.mkdirs()
+            logger.lifecycle("Fetching ${spec.commit.take(12)} from ${spec.repository}")
+            runCommand(['git', 'init', '-q'], fetched)
+            runCommand(['git', 'fetch', '-q', '--depth', '1', spec.repository, spec.commit], fetched)
+            runCommand(['git', 'archive', '-o', zip.path, 'FETCH_HEAD'], fetched)
+            project.delete(fetched)
+        }
+        project.copy { from project.zipTree(zip); into src }
     }
+    logger.lifecycle("Building unreleased ${name} from ${spec.commit.take(12)} (first time only)")
+    runCommand(isWindows ? ['cmd', '/c', new File(src, 'gradlew.bat').absolutePath, '--no-daemon', '-q', 'jar']
+                         : ['bash', 'gradlew', '--no-daemon', '-q', 'jar'], src)
+    def built = new File(src, "build/libs/${name}")
+    if (!built.isFile()) throw new GradleException("Source build did not produce ${built}")
+    jar.parentFile.mkdirs()
+    java.nio.file.Files.copy(built.toPath(), jar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    marker.text = spec.commit + '\n'
 }
-def requireDependencies = tasks.register('requireDependencies') {
+def fetchDependencies = tasks.register('fetchDependencies') {
+    group = 'build setup'
+    description = 'Prepares the pinned Singulo, AE2 and GuideME JARs in libs/ (SHA-256 downloads or pinned source builds).'
+    def selected = pinnedDependencies.findAll { name, spec -> !providers.gradleProperty(spec.property).isPresent() }
+    def pinned = selected.findAll { name, spec -> spec.sha256 }
+    def sourceBuilt = selected.findAll { name, spec -> spec.commit }
+    def overrides = pinnedDependencies.findAll { name, spec -> providers.gradleProperty(spec.property).isPresent() }
+        .collectEntries { name, spec -> [(spec.property): dependencyJar(name, spec)] }
+    inputs.file('tools/dependencies.json')
+    outputs.files(selected.keySet().collect { file("libs/${it}") })
+    outputs.upToDateWhen { sourceBuilt.every { name, spec ->
+        def marker = file("libs/${name}.commit")
+        file("libs/${name}").isFile() && marker.isFile() && marker.text.trim() == spec.commit } }
     doLast {
-        ['singuloJar', 'ae2Jar', 'guideMeJar'].each { key ->
-            if (!providers.gradleProperty(key).isPresent())
-                throw new GradleException("Use -P${key}=/absolute/path/to/the/matching.jar for a game run")
+        overrides.each { property, jar ->
+            if (!jar.isFile()) throw new GradleException("Missing -P${property}: ${jar}")
+            logger.warn("Using unpinned -P${property}=${jar}; not valid for publication checks")
+        }
+        sourceBuilt.each { name, spec ->
+            buildFromSource(name, spec)
+            logger.warn("${name} is an UNRELEASED build of ${spec.commit.take(12)}; Applied Singulo built against it must not be published")
+        }
+        pinned.each { name, spec ->
+            def jar = file("libs/${name}")
+            if (!jar.isFile()) {
+                logger.lifecycle("Downloading ${name} from ${spec.url}")
+                jar.parentFile.mkdirs()
+                def part = file("libs/${name}.part")
+                def connection = new URL(spec.url).openConnection()
+                connection.connectTimeout = 30000
+                connection.readTimeout = 120000
+                connection.setRequestProperty('User-Agent', 'Applied-Singulo-build')
+                connection.inputStream.withCloseable { input -> part.withOutputStream { it << input } }
+                if (!part.renameTo(jar)) throw new GradleException("Could not move ${part} to ${jar}")
+            }
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+            jar.withInputStream { input ->
+                byte[] buffer = new byte[65536]
+                for (int n = input.read(buffer); n > 0; n = input.read(buffer)) digest.update(buffer, 0, n)
+            }
+            def actual = digest.digest().encodeHex().toString()
+            if (actual != spec.sha256) {
+                jar.delete()
+                throw new GradleException("SHA-256 mismatch for ${name}: ${actual}; deleted, refusing dependency")
+            }
         }
     }
 }
+pinnedDependencies.each { name, spec ->
+    def jar = files(dependencyJar(name, spec)).builtBy(fetchDependencies)
+    dependencies {
+        compileOnly jar
+        runtimeOnly jar
+    }
+}
+
 neoForge {
     version = project.neo_version
     runs {
@@ -39,7 +135,9 @@ neoForge {
     }
     mods { "${mod_id}" { sourceSet(sourceSets.main) } }
 }
-tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.configureEach { dependsOn requireDependencies }
+tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.configureEach { dependsOn fetchDependencies }
+tasks.named('compileJava') { dependsOn fetchDependencies }
+
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def values = [minecraft_version_range: minecraft_version_range, neo_version: neo_version,
         loader_version_range: loader_version_range, mod_id: mod_id, mod_name: mod_name,

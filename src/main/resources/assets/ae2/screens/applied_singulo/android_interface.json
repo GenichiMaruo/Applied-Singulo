@@ -1,0 +1,47 @@
+{
+  "includes": [
+    "../common/common.json",
+    "../common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "guis/applied_singulo/android_interface.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      252
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.applied_singulo.android_interface"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  },
+  "widgets": {
+    "openPriority": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "cancelAll": {
+      "left": 124,
+      "top": 54,
+      "width": 44,
+      "height": 12
+    }
+  },
+  "slots": {
+    "STORAGE": {
+      "left": 8,
+      "top": 136,
+      "grid": "HORIZONTAL"
+    }
+  }
+}
