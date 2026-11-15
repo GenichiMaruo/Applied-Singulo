@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:storage_monitor"
+    },
+    {
+      "item": "ae2:logic_processor"
+    },
+    {
+      "item": "singulo:desk_monitor"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "item": "applied_singulo:android_order_monitor"
+  }
+}

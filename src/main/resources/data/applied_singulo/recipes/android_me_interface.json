@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IEI",
+    "LXL",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "E": {
+      "item": "ae2:engineering_processor"
+    },
+    "L": {
+      "item": "ae2:logic_processor"
+    },
+    "X": {
+      "item": "ae2:interface"
+    },
+    "S": {
+      "item": "singulo:android_supply_port"
+    }
+  },
+  "result": {
+    "count": 1,
+    "item": "applied_singulo:android_me_interface"
+  }
+}
