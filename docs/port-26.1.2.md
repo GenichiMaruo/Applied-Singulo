@@ -116,3 +116,26 @@ logic was relaxed. The corrected full rerun passed all 47 tests.
 
 Two consecutive final runs passed (`port-gametest-final26-3.log` and `-4.log`),
 with no ERROR lines. Packaging validation also passed; UI remains untested.
+
+### Visual client smoke check (2026-11-15)
+
+With explicit UI permission restored, ran the development client against Singulo
+SHA-256 `521aaa4699fdf7cb7306c5047ca09a2ac9141711884c51c40373987cfd2f73a1`.
+Created a separate `Applied 26 Visual Review` world; master/music volume both 0,
+clear weather and `minecraft:advance_weather false`. No ordinary world was changed.
+Observed the interface block model, opened its GUI with AE2 creative energy connected,
+and verified green Online status, unlinked-console message, readable order/stock/ME
+rows, plus panel/monitor/emitter inventory icons and panel held model. No missing
+texture or crash was observed; the client exited normally (`BUILD SUCCESSFUL`).
+Screenshots: `run/screenshots/2026-11-15_17.55.05.png` and `17.55.28.png`.
+This is a visual smoke check, not a manual end-to-end order execution or shader test.
+The work console was intentionally not linked in this fixture; functional paths
+remain covered by the integration GameTests. Optional absent-mod mixin warnings
+were present, but there were no ERROR-level messages in this client run.
+
+The same dependency then passed another full headless run:
+`build/port-gametest-visual-final.log`, all 46 addon + 1 vanilla tests passed;
+no ERROR-level lines, log validator and distribution checks PASS. Local artifact
+SHA-256 remains `c62a5d5bd6c7e8acc5893f7ba234804ee79a9b80a5a07d373c7fdae8bba4ad78`.
+The distribution checker correctly retains NOT PUBLISHABLE for the unreleased
+Singulo dependency. No release, merge or publication was performed.
