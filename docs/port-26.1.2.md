@@ -101,3 +101,18 @@ log validation and packaging checks passed. Log: `build/port-gametest-final26.lo
 The resulting local Applied JAR SHA-256 is
 `c62a5d5bd6c7e8acc5893f7ba234804ee79a9b80a5a07d373c7fdae8bba4ad78`.
 This remains a development artifact, not a publishable CI receipt. No UI was started.
+
+### Final Sodium-target checkpoint and AE2 test synchronization
+
+The final Singulo dependency hash is now
+`0b42f241c71ecf36c1ddebd5d5303dcf79547522c5c2fc5166015a493a04ad25`.
+An initial rerun exposed a timing-dependent test fixture: AE2 26.1.13-beta's
+`NetworkCraftingSimulationState` deliberately uses `getCachedInventory()` for
+machine-origin calculations. The test switched its stored materials and immediately
+started another calculation in the same tick, sometimes snapshotting old inventory.
+The fixture now waits for the actual expected cached material counts before each
+calculation. The original chain-selection assertions are unchanged, and no product
+logic was relaxed. The corrected full rerun passed all 47 tests.
+
+Two consecutive final runs passed (`port-gametest-final26-3.log` and `-4.log`),
+with no ERROR lines. Packaging validation also passed; UI remains untested.

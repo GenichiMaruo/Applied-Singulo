@@ -542,6 +542,15 @@ public final class MeInterfaceGameTests {
                 "Interface online with its patterns registered in AE2"))
             .thenExecute(() -> {
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -556,6 +565,15 @@ public final class MeInterfaceGameTests {
                     appeng.api.networking.security.IActionSource.empty());
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS), 16L,
                     appeng.api.stacks.AEItemKey.of(Items.STICK), 8L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 0 && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16 && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -567,6 +585,15 @@ public final class MeInterfaceGameTests {
                     "Without logs, AE2 must fall back to the single-step fence pattern: " + p.patternTimes());
                 // As in the reported world: logs AND intermediates stored. The chain has the higher priority.
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
