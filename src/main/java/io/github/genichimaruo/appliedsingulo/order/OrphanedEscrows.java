@@ -25,8 +25,27 @@ public final class OrphanedEscrows extends SavedData {
     static final int INTERVAL = 40;
     private static final net.minecraft.world.level.saveddata.SavedDataType<OrphanedEscrows> TYPE =
         new net.minecraft.world.level.saveddata.SavedDataType<>(net.minecraft.resources.Identifier.fromNamespaceAndPath("applied_singulo", "orphaned_escrows"),
-            level -> new OrphanedEscrows(), level -> CompoundTag.CODEC.xmap(
+            OrphanedEscrows::migrateOrCreate, level -> CompoundTag.CODEC.xmap(
                 tag -> load(tag, level.registryAccess()), data -> data.save(new CompoundTag(), level.registryAccess())));
+
+    /** Import the old flat save without deleting it or replaying it over a newer save. */
+    private static OrphanedEscrows migrateOrCreate(ServerLevel level) {
+        var data = net.minecraft.world.level.dimension.DimensionType.getStorageFolder(level.dimension(),
+            level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)).resolve("data");
+        var id = net.minecraft.resources.Identifier.fromNamespaceAndPath("applied_singulo", "orphaned_escrows");
+        if (java.nio.file.Files.exists(id.withSuffix(".dat").resolveAgainst(data)))
+            throw new IllegalStateException("Cannot decode existing orphaned escrow data; restore a verified backup instead of resetting custody");
+        var legacy = data.resolve(NAME + ".dat");
+        if (!java.nio.file.Files.exists(legacy)) return new OrphanedEscrows();
+        try {
+            var root = net.minecraft.nbt.NbtIo.readCompressed(legacy, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            var imported = load(root.getCompound("data").orElseThrow(), level.registryAccess());
+            imported.setDirty();
+            return imported;
+        } catch (java.io.IOException | RuntimeException failure) {
+            throw new IllegalStateException("Cannot safely import legacy orphaned escrow data", failure);
+        }
+    }
 
     private record Entry(UUID owner, UUID request, BlockPos pos) { }
     private final List<Entry> entries = new ArrayList<>();
