@@ -2,8 +2,9 @@
   "Singulo-0.19.0-26.1.2N.jar": {
     "property": "singuloJar",
     "unreleased": true,
-    "pending": true,
-    "note": "Real 26.1.2 development JAR builds and addon integration tests pass, but final Singulo source/artifact provenance and public availability are not yet pinned. Development override only; do not publish."
+    "repository": "https://github.com/GenichiMaruo/Singulo.git",
+    "commit": "a2bac16a13d30c3f7116a5bd171d2a8fea6fd18b",
+    "note": "Immutable source pin for development CI only. Release receipt remains withheld until official general availability and URL/SHA-256 verification."
   },
   "appliedenergistics2-26.1.13-beta.jar": {
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/v26.1.13-beta/appliedenergistics2-26.1.13-beta.jar",

@@ -148,3 +148,11 @@ An isolated-file regression verifies custody identity/position, dirty state,
 byte-identical legacy backup retention, and refusal to replay over an existing new
 save. All 47 addon tests plus 1 vanilla test passed after this fix
 (`build/port-pr-review1.log`). Publication still awaits the official Singulo pin.
+
+### Immutable source CI preparation
+
+Singulo source is now pinned to remote commit
+`a2bac16a13d30c3f7116a5bd171d2a8fea6fd18b` for development CI. The dependency
+remains `unreleased: true`; the existing source-build path may test it, but no
+release receipt is issued. This supersedes the unresolved-source pending marker,
+not the requirement for official publication and a verified URL/SHA-256 before release.
