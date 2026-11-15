@@ -2,9 +2,9 @@
   "Singulo-0.19.0-26.1.2N.jar": {
     "property": "singuloJar",
     "unreleased": true,
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "commit": "a2bac16a13d30c3f7116a5bd171d2a8fea6fd18b",
-    "note": "Immutable source pin for development CI only. Release receipt remains withheld until official general availability and URL/SHA-256 verification."
+    "url": "https://edge.forgecdn.net/files/9627/445/Singulo-0.19.0-26.1.2N.jar",
+    "sha256": "891f6d67453bc7bbb55db6003464e0fbbc629f2b6a944192e4657cf95df51f1b",
+    "note": "Official CI 43703005408 artifact, CF file 9627445 accepted and CDN verified. General publication still pending; release receipt withheld."
   },
   "appliedenergistics2-26.1.13-beta.jar": {
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/v26.1.13-beta/appliedenergistics2-26.1.13-beta.jar",
