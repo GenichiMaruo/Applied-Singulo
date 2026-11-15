@@ -272,6 +272,9 @@ public final class MeInterfaceGameTests {
 
     private static WorkConsoleBlockEntity workshop(GameTestHelper h, boolean moving, net.minecraft.world.level.block.Block tableBlock) {
         var level = h.getLevel();
+        // The empty template is all air: give the workshop a level walkable floor.
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 8; z++)
+            h.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
         h.setBlock(CONSOLE, SinguloBlocks.ANDROID_WORK_CONSOLE.get());
         h.setBlock(SUPPLY, SinguloBlocks.ANDROID_SUPPLY_PORT.get());
         h.setBlock(CHEST, Blocks.CHEST);
@@ -307,6 +310,8 @@ public final class MeInterfaceGameTests {
         android.moveTo(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(2, 1, 2))));
         android.setNoAi(!moving);
         level.addFreshEntity(android);
+        // Finished workshops must not leave roaming physical obstacles in neighboring tests.
+        LegacyTestPlayers.onFinish(h, android::discard);
         return console;
     }
 
