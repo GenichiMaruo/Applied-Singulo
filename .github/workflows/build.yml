@@ -45,5 +45,6 @@ jobs:
           path: |
             build/${{ matrix.loader }}/libs/Applied-Singulo-*.jar
             build/${{ matrix.loader }}/integration-gametest.log
+            build/${{ matrix.loader }}/gametest/logs/latest.log
             build/${{ matrix.loader }}/release-manifest.json
           if-no-files-found: error

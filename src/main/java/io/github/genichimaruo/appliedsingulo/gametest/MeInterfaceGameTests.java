@@ -375,10 +375,11 @@ public final class MeInterfaceGameTests {
         List<ItemStack> logs = new ArrayList<>();
         for (int i = 0; i < 4; i++) logs.add(new ItemStack(Items.OAK_LOG, 64));
         h.assertTrue(me.queue().accept(new ItemStack(Items.OAK_PLANKS), 1024, logs, console.getBlockPos(), now - 200), "push");
+        var request = me.queue().jobs().get(0);
         h.succeedWhen(() -> {
             h.assertTrue(me.queue().jobs().isEmpty(), "Request still open: " + me.queue().jobs());
             h.assertTrue(count(me.queue().outputContents(), Items.OAK_PLANKS) == 1024,
-                "All 1024 planks claimed: " + count(me.queue().outputContents(), Items.OAK_PLANKS));
+                "All 1024 planks claimed: " + count(me.queue().outputContents(), Items.OAK_PLANKS) + "; " + request + "; buffers=" + me.queue().outputContents());
         });
     }
 
