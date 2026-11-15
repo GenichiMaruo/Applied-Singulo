@@ -3,7 +3,7 @@
     "property": "singuloJar",
     "unreleased": true,
     "pending": true,
-    "note": "26.1.2 Singulo port is not yet buildable. Pin its verified matching commit/artifact before integration; never substitute a 1.21.1 runtime."
+    "note": "Real 26.1.2 development JAR builds and addon integration tests pass, but final Singulo source/artifact provenance and public availability are not yet pinned. Development override only; do not publish."
   },
   "appliedenergistics2-26.1.13-beta.jar": {
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/v26.1.13-beta/appliedenergistics2-26.1.13-beta.jar",
