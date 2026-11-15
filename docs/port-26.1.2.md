@@ -91,3 +91,13 @@ The addon also now imports the former flat orphaned-escrow save without deleting
 backup; it refuses a reset/replay if the new namespaced save exists but cannot decode.
 Client visual validation remains outstanding; UI automation was stopped at the user's
 Escape request. Publication remains blocked pending validated/pinned Singulo provenance.
+
+### Final headless rerun
+
+Repeated `runGameTestServer build` with the updated Singulo development JAR SHA-256
+`a640076f5c30920b9bef71cb52c36a4c236a0b3a9811800e21b248b109fad4c2`.
+All 47 required tests passed again (46 addon + 1 built-in), no ERROR lines,
+log validation and packaging checks passed. Log: `build/port-gametest-final26.log`.
+The resulting local Applied JAR SHA-256 is
+`c62a5d5bd6c7e8acc5893f7ba234804ee79a9b80a5a07d373c7fdae8bba4ad78`.
+This remains a development artifact, not a publishable CI receipt. No UI was started.
