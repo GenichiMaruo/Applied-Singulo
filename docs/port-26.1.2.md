@@ -62,3 +62,15 @@ The matching API and native-to-legacy root-transaction adapter were added to the
 26.1.2 development worktree. These changes require a new verified Singulo build; the
 legacy 1.21.1 diagnostic JAR does not contain this API. The default pending dependency
 and publication guard remain in force. Owner and network-key checks remain in MeStorageView.
+
+## Real 26.1.2 compile checkpoint
+
+`compileJava` and `build` passed against the actual development Singulo 26.1.2 JAR,
+NeoForge 26.1.2.126, AE2 26.1.13-beta and GuideME 26.1.14-beta. This includes
+compiling the addon GameTest source, but does not execute those tests.
+`tools/check_distribution.py` passed metadata, Java 25 bytecode, icon, test exclusion
+and no bundled dependency checks for `Applied-Singulo-0.1.0-26.1.2N.jar`.
+The pending/unreleased dependency gate is intentionally still active: the current
+Singulo source is being validated, so a development-only `-PsinguloJar` override
+was used. No merge, push of dependencies, release tag or publication was performed.
+Dedicated-server, integration GameTests and visual client checks remain required.
