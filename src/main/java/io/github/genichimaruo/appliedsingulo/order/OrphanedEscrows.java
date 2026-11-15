@@ -32,6 +32,10 @@ public final class OrphanedEscrows extends SavedData {
     private static OrphanedEscrows migrateOrCreate(ServerLevel level) {
         var data = net.minecraft.world.level.dimension.DimensionType.getStorageFolder(level.dimension(),
             level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)).resolve("data");
+        return migrateOrCreate(data, level.registryAccess());
+    }
+
+    private static OrphanedEscrows migrateOrCreate(java.nio.file.Path data, HolderLookup.Provider registries) {
         var id = net.minecraft.resources.Identifier.fromNamespaceAndPath("applied_singulo", "orphaned_escrows");
         if (java.nio.file.Files.exists(id.withSuffix(".dat").resolveAgainst(data)))
             throw new IllegalStateException("Cannot decode existing orphaned escrow data; restore a verified backup instead of resetting custody");
@@ -39,7 +43,7 @@ public final class OrphanedEscrows extends SavedData {
         if (!java.nio.file.Files.exists(legacy)) return new OrphanedEscrows();
         try {
             var root = net.minecraft.nbt.NbtIo.readCompressed(legacy, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-            var imported = load(root.getCompound("data").orElseThrow(), level.registryAccess());
+            var imported = load(root.getCompound("data").orElseThrow(), registries);
             imported.setDirty();
             return imported;
         } catch (java.io.IOException | RuntimeException failure) {
@@ -97,7 +101,8 @@ public final class OrphanedEscrows extends SavedData {
 
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % INTERVAL != 0) return;
-        var data = level.getDataStorage().get(TYPE);
+        // Initialize on the first scheduled tick so legacy-only saves migrate even without a new interface.
+        var data = get(level);
         if (data != null && !data.entries.isEmpty()) data.process(level);
     }
 

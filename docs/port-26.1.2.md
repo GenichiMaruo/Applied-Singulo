@@ -139,3 +139,12 @@ no ERROR-level lines, log validator and distribution checks PASS. Local artifact
 SHA-256 remains `c62a5d5bd6c7e8acc5893f7ba234804ee79a9b80a5a07d373c7fdae8bba4ad78`.
 The distribution checker correctly retains NOT PUBLISHABLE for the unreleased
 Singulo dependency. No release, merge or publication was performed.
+
+### Independent PR review
+
+Independent review identified legacy-only orphaned escrow saves not initializing
+from the scheduled recovery tick. The tick now invokes the migration-aware getter.
+An isolated-file regression verifies custody identity/position, dirty state,
+byte-identical legacy backup retention, and refusal to replay over an existing new
+save. All 47 addon tests plus 1 vanilla test passed after this fix
+(`build/port-pr-review1.log`). Publication still awaits the official Singulo pin.

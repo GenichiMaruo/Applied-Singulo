@@ -27,3 +27,15 @@ preparing a CI receipt. This does not authorize publishing Applied Singulo itsel
   source and the current GitHub Actions commit. Use only a fresh CI build -> tests -> manifest artifact,
   never an old local JAR relabelled with a new commit.
 - Metadata requires `[0.19.0,0.20.0)`. No Applied CF/Modrinth publication or merge is authorized here.
+
+## Minecraft 26.1.2 branch (supersedes the dependency example above)
+
+This branch targets Minecraft 26.1.2 / NeoForge 26.1.2.126 / Java 25.
+The 1.21.1 file 9617080 mentioned above is NOT a compatible dependency for this branch.
+Use `tools/dependencies.json` as the authoritative dependency inventory. Until the
+26.1.2 Singulo artifact is officially public and hash-pinned there, development may
+use `-PsinguloJar=<verified-26.1.2-jar>`, but CI release receipts and publication stay
+blocked. Do not replace the pending marker with a local artifact or a 1.21.1 URL.
+The current release request authorizes PR review, merge, and publication after all
+checks pass; the earlier historical authorization notes do not describe that request.
+See `docs/port-26.1.2.md` for port validation and limitations.
