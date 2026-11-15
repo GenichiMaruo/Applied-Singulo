@@ -74,3 +74,20 @@ The pending/unreleased dependency gate is intentionally still active: the curren
 Singulo source is being validated, so a development-only `-PsinguloJar` override
 was used. No merge, push of dependencies, release tag or publication was performed.
 Dedicated-server, integration GameTests and visual client checks remain required.
+
+## Headless integration result
+
+The real 26.1.2 server run passed all **46 Applied tests plus 1 Minecraft built-in**.
+The first run exposed five obsolete crafting ingredient JSON files even though its
+existing 45 tests passed. Those recipes were migrated and a new regression test now
+checks all five recipes load, match their actual ingredient grids, and produce the
+correct item/count. The final run has no datapack parse errors; the strengthened
+`check_gametest_log.py` and `check_distribution.py` both pass.
+
+Evidence: `build/port-gametest-real26-3.log` (47 required passed), Java 25,
+NeoForge 26.1.2.126, AE2 26.1.13-beta, GuideME 26.1.14-beta, development Singulo
+JAR SHA-256 `5a5e19d1f35a1044c878a5f6266d3a46f5a98857c86e42ce53f7b3268bd6f316`.
+The addon also now imports the former flat orphaned-escrow save without deleting its
+backup; it refuses a reset/replay if the new namespaced save exists but cannot decode.
+Client visual validation remains outstanding; UI automation was stopped at the user's
+Escape request. Publication remains blocked pending validated/pinned Singulo provenance.

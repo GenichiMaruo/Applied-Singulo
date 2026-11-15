@@ -11,7 +11,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /** Registry-based equivalent of the old annotation scanner; keeps original test counts and timeouts. */
 public final class PortGameTests {
  private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, "applied_singulo");
- private static final Class<?>[] SUITES = {MeInterfaceGameTests.class, PatternIdentityGameTests.class, PatternRequestGameTests.class, StockPatternGameTests.class};
+ private static final Class<?>[] SUITES = {MeInterfaceGameTests.class, PatternIdentityGameTests.class, PatternRequestGameTests.class, StockPatternGameTests.class, RecipeGameTests.class};
  public static void init(IEventBus bus) {
   for (Class<?> suite:SUITES) for(Method m:suite.getDeclaredMethods()) if(m.isAnnotationPresent(GameTest.class)) {
    FUNCTIONS.register(name(suite,m), () -> helper -> {try {m.invoke(null,helper);} catch(ReflectiveOperationException e){throw new RuntimeException("GameTest invocation failed",e.getCause()==null?e:e.getCause());}});

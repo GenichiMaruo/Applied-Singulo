@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "applied_singulo:android_me_interface_panel"
-    }
+    "applied_singulo:android_me_interface_panel"
   ],
   "result": {
     "id": "applied_singulo:android_me_interface",
