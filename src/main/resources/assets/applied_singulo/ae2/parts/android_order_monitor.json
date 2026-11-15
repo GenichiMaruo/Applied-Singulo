@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "ae2:model",
+    "model": "applied_singulo:part/android_order_monitor"
+  }
+}

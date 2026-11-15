@@ -6,17 +6,11 @@ import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartItem;
-import appeng.api.parts.IPartModel;
 import appeng.api.util.AECableType;
 import appeng.parts.AEBasePart;
-import io.github.genichimaruo.appliedsingulo.AppliedSingulo;
-import java.util.List;
 import java.util.Locale;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
@@ -42,17 +36,9 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
         }
     }
 
-    private static final ResourceLocation MODEL_OFF = id("part/android_status_emitter_off");
-    private static final ResourceLocation MODEL_ON = id("part/android_status_emitter_on");
-    public static final List<ResourceLocation> MODELS = List.of(MODEL_OFF, MODEL_ON);
-    private record Models(List<ResourceLocation> getModels) implements IPartModel { }
-    private static final IPartModel OFF = new Models(List.of(MODEL_OFF));
-    private static final IPartModel ON = new Models(List.of(MODEL_ON));
-
     private Mode mode = Mode.STUCK;
     private boolean emitting;
 
-    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(AppliedSingulo.MOD_ID, path); }
 
     public AndroidStatusEmitterPart(IPartItem<?> item) {
         super(item);
@@ -88,8 +74,8 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
             mode = Mode.values()[(mode.ordinal() + 1) % Mode.values().length];
             if (getHost() != null) getHost().markForSave();
             update();
-            player.displayClientMessage(Component.translatable("message.applied_singulo.emitter.mode",
-                Component.translatable("gui.applied_singulo.emitter." + mode.name().toLowerCase(Locale.ROOT))), true);
+            player.sendOverlayMessage(Component.translatable("message.applied_singulo.emitter.mode",
+                Component.translatable("gui.applied_singulo.emitter." + mode.name().toLowerCase(Locale.ROOT))));
         }
         return true;
     }
@@ -105,7 +91,10 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     }
 
     @Override public float getCableConnectionLength(AECableType cable) { return 4; }
-    @Override public IPartModel getStaticModels() { return emitting ? ON : OFF; }
+    @Override public void collectModelData(net.neoforged.neoforge.model.data.ModelData.Builder builder) {
+        super.collectModelData(builder);
+        builder.with(appeng.parts.automation.PartModelData.LEVEL_EMITTER_ON, emitting);
+    }
 
     @Override
     public void writeToStream(RegistryFriendlyByteBuf data) {
@@ -122,15 +111,15 @@ public final class AndroidStatusEmitterPart extends AEBasePart implements IGridT
     }
 
     @Override
-    public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readFromNBT(tag, registries);
-        try { mode = Mode.valueOf(tag.getString("mode")); } catch (IllegalArgumentException ignored) { mode = Mode.STUCK; }
-        emitting = tag.getBoolean("emitting");
+    public void readFromNBT(net.minecraft.world.level.storage.ValueInput tag) {
+        super.readFromNBT(tag);
+        try { mode = Mode.valueOf(tag.getStringOr("mode", "")); } catch (IllegalArgumentException ignored) { mode = Mode.STUCK; }
+        emitting = tag.getBooleanOr("emitting", false);
     }
 
     @Override
-    public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeToNBT(tag, registries);
+    public void writeToNBT(net.minecraft.world.level.storage.ValueOutput tag) {
+        super.writeToNBT(tag);
         tag.putString("mode", mode.name());
         tag.putBoolean("emitting", emitting);
     }

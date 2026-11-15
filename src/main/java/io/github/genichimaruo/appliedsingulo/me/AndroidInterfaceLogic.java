@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -369,7 +369,7 @@ public final class AndroidInterfaceLogic {
 
     public boolean mayUse(Player player) {
         var owner = queue.owner();
-        return owner == null || owner.equals(player.getUUID()) || player.hasPermissions(2);
+        return owner == null || owner.equals(player.getUUID()) || player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
     }
 
     /** Placed by {@code player}: owner, and the owner's Work Console next to {@code pos} becomes the order target. */
@@ -379,9 +379,9 @@ public final class AndroidInterfaceLogic {
         var console = SinguloLinks.ownedNeighbourConsole(server, host.hostPos(), player.getUUID());
         if (console != null) {
             queue.setConsole(console);
-            player.displayClientMessage(Component.translatable("message.applied_singulo.device.console_set", console.toShortString()), true);
+            player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.console_set", console.toShortString()));
         } else {
-            player.displayClientMessage(Component.translatable("message.applied_singulo.device.console_hint"), true);
+            player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.console_hint"));
         }
     }
 
@@ -392,19 +392,19 @@ public final class AndroidInterfaceLogic {
         var owner = queue.owner();
         var console = SinguloLinks.cardTarget(stack, server);
         if (owner != null && !owner.equals(player.getUUID())) {
-            player.displayClientMessage(Component.translatable("message.applied_singulo.device.not_owner"), true);
+            player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.not_owner"));
         } else if (console == null) {
-            player.displayClientMessage(Component.translatable("message.applied_singulo.device.card_empty"), true);
+            player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.card_empty"));
         } else {
             var access = SinguloLinks.checkAccess(server, console, player.getUUID());
             if (access != null && !"console_receipt_ledger_full".equals(access)) {
-                player.displayClientMessage(Component.translatable("message.applied_singulo.device.console_refused",
-                    console.toShortString(), access), true);
+                player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.console_refused",
+                    console.toShortString(), access));
             } else {
                 if (owner == null) setOwningPlayer(player);
                 queue.setConsole(console);
-                player.displayClientMessage(Component.translatable("message.applied_singulo.device.console_set",
-                    console.toShortString()), true);
+                player.sendOverlayMessage(Component.translatable("message.applied_singulo.device.console_set",
+                    console.toShortString()));
             }
         }
         return true;
@@ -482,14 +482,16 @@ public final class AndroidInterfaceLogic {
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
         queue.save(tag, registries);
-        chainNode.saveToNBT(tag);
+        var nodeOutput = io.github.genichimaruo.appliedsingulo.compat.TagBridge.output(registries);
+        chainNode.serialize(nodeOutput);
+        tag.merge(nodeOutput.buildResult());
         tag.putInt("priority", priority);
         var stock = new net.minecraft.nbt.ListTag();
         for (int i = 0; i < STOCK_SLOTS; i++) {
             if (stockItems[i] == null) continue;
             var entry = new CompoundTag();
             entry.putInt("slot", i);
-            entry.put("item", stockItems[i].toTagGeneric(registries));
+            entry.put("item", appeng.api.stacks.AEKey.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), stockItems[i]).getOrThrow());
             entry.putLong("amount", stockAmounts[i]);
             stock.add(entry);
         }
@@ -498,19 +500,19 @@ public final class AndroidInterfaceLogic {
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         queue.load(tag, registries);
-        chainNode.loadFromNBT(tag);
-        priority = tag.getInt("priority");
+        chainNode.deserialize(io.github.genichimaruo.appliedsingulo.compat.TagBridge.input(tag, registries));
+        priority = tag.getIntOr("priority", 0);
         for (int i = 0; i < STOCK_SLOTS; i++) cancelStockCalculation(i);
         java.util.Arrays.fill(stockState, null);
         java.util.Arrays.fill(stockItems, null);
         java.util.Arrays.fill(stockAmounts, 0);
-        for (var raw : tag.getList("stock", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+        for (var raw : tag.getListOrEmpty("stock")) {
             var entry = (CompoundTag) raw;
-            int slot = entry.getInt("slot");
+            int slot = entry.getIntOr("slot", 0);
             if (slot < 0 || slot >= STOCK_SLOTS) continue;
-            if (appeng.api.stacks.AEKey.fromTagGeneric(registries, entry.getCompound("item")) instanceof AEItemKey key) {
+            if (appeng.api.stacks.AEKey.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), entry.getCompoundOrEmpty("item")).result().orElse(null) instanceof AEItemKey key) {
                 stockItems[slot] = key;
-                stockAmounts[slot] = entry.getLong("amount");
+                stockAmounts[slot] = entry.getLongOr("amount", 0L);
             }
         }
     }

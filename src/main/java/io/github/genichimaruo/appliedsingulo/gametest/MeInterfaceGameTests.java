@@ -26,9 +26,9 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.GameTest;
+
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -39,11 +39,11 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("applied_singulo")
-@PrefixGameTestTemplate(false)
+
+
+
+
 public final class MeInterfaceGameTests {
     private static final BlockPos ME = new BlockPos(1, 1, 1);
     private static final BlockPos CONSOLE = new BlockPos(0, 1, 0), SUPPLY = new BlockPos(1, 1, 0), CHEST = new BlockPos(1, 1, 1),
@@ -57,7 +57,7 @@ public final class MeInterfaceGameTests {
         var tag = new net.minecraft.nbt.CompoundTag();
         q.save(tag, h.getLevel().registryAccess());
         var later = new net.minecraft.nbt.ListTag();
-        later.add(new ItemStack(Items.STONE, 10).save(h.getLevel().registryAccess()));
+        later.add(ItemStack.CODEC.encodeStart(h.getLevel().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), new ItemStack(Items.STONE, 10)).getOrThrow());
         tag.put("returnLater", later);
         q.load(tag, h.getLevel().registryAccess());
         int[] inserted = {0};
@@ -121,7 +121,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(q.breakDown(h.getLevel(), pos).isEmpty(), "No fake fluid sample item drops");
         var data = OrphanedEscrows.get(h.getLevel());
         var tag = data.save(new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess());
-        h.assertTrue(!tag.getList("fluids", net.minecraft.nbt.Tag.TAG_COMPOUND).isEmpty(), "Recovery is persisted");
+        h.assertTrue(!tag.getListOrEmpty("fluids").isEmpty(), "Recovery is persisted");
         // Clear the live test-world entry, then recover only from the serialized/reloaded copy.
         data.recover(h.getLevel(), owner, pos, q);
         q.sendOutputs(sample -> ItemStack.EMPTY);
@@ -240,12 +240,12 @@ public final class MeInterfaceGameTests {
     public static void meInterfaceIsAGridNodeHostAndAdoptsOnlyAnOwnedConsole(GameTestHelper h) {
         var owner = UUID.randomUUID();
         h.setBlock(ME.south(), SinguloBlocks.ANDROID_WORK_CONSOLE.get());
-        ((WorkConsoleBlockEntity) h.getBlockEntity(ME.south())).setOwner(owner);
+        ((WorkConsoleBlockEntity) h.getBlockEntity(ME.south(), WorkConsoleBlockEntity.class)).setOwner(owner);
         h.setBlock(ME, ModContent.ANDROID_ME_INTERFACE.get());
         h.assertTrue(h.getLevel().getCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST, h.absolutePos(ME), null) != null,
             "Cables must be able to connect");
         for (var side : Direction.values()) {
-            var view = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(ME), side);
+            var view = h.getLevel().getCapability(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, h.absolutePos(ME), side);
             h.assertTrue(view == null || view.getSlots() == 0,
                 "Without an owner and an online ME network, no face may show or accept anything");
         }
@@ -258,7 +258,12 @@ public final class MeInterfaceGameTests {
 
     // ------------------------------------------------------------------ real Singulo workshop
 
-    private static Item singulo(String name) { return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("singulo", name)); }
+    private static appeng.api.inventories.InternalInventory driveInventory(net.minecraft.server.level.ServerLevel level, BlockPos pos) {
+        var handler = level.getCapability(Capabilities.Item.BLOCK, pos, Direction.UP);
+        return handler == null ? null : new appeng.api.inventories.PlatformInventoryWrapper(handler);
+    }
+
+    private static Item singulo(String name) { return BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("singulo", name)); }
 
     private static ItemStack recipeCard(GameTestHelper h, List<ItemStack> grid, ItemStack output) {
         var card = new ItemStack(singulo("recipe_card"));
@@ -278,16 +283,16 @@ public final class MeInterfaceGameTests {
         h.setBlock(CHEST, Blocks.CHEST);
         h.setBlock(RACK, SinguloBlocks.ANDROID_RECIPE_RACK.get());
         h.setBlock(TABLE, tableBlock);
-        ((ChestBlockEntity) h.getBlockEntity(CHEST)).setItem(0, new ItemStack(Items.OAK_LOG, 32));
+        ((ChestBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(CHEST))).setItem(0, new ItemStack(Items.OAK_LOG, 32));
         var player = h.makeMockServerPlayerInLevel();
-        WorkConsoleBlockEntity console = h.getBlockEntity(CONSOLE);
+        WorkConsoleBlockEntity console = h.getBlockEntity(CONSOLE, WorkConsoleBlockEntity.class);
         console.setOwner(player.getUUID());
         var link = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(link, level, h.absolutePos(CONSOLE), SinguloBlocks.ANDROID_WORK_CONSOLE.get());
-        for (var p : List.of(SUPPLY, RACK)) ((WorkLinkedBlockEntity) h.getBlockEntity(p)).useItem(player, link, InteractionHand.MAIN_HAND);
+        for (var p : List.of(SUPPLY, RACK)) ((WorkLinkedBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(p))).useItem(player, link, InteractionHand.MAIN_HAND);
         var table = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(table, level, h.absolutePos(TABLE), tableBlock);
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = (RecipeRackBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(RACK));
         List<ItemStack> planks = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
         planks.set(0, new ItemStack(Items.OAK_LOG));
         List<ItemStack> sticks = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
@@ -300,12 +305,12 @@ public final class MeInterfaceGameTests {
         for (int i : new int[] { 3, 5, 6, 8 }) fence.set(i, new ItemStack(Items.OAK_PLANKS));
         for (int i : new int[] { 4, 7 }) fence.set(i, new ItemStack(Items.STICK));
         rack.items().setStackInSlot(3, recipeCard(h, fence, new ItemStack(Items.OAK_FENCE, 3)));
-        if (player.getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.getServer().getPlayerList().remove(player);
+        if (player.level().getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.level().getServer().getPlayerList().remove(player);
         player.discard();
 
-        var android = SinguloEntities.BLADE_ANDROID.get().create(level);
+        var android = SinguloEntities.BLADE_ANDROID.get().create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
         android.makeGuard(console.owner(), h.absolutePos(new BlockPos(2, 1, 4)), RuinAndroid.MODE_GUARD, 30);
-        android.moveTo(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(2, 1, 2))));
+        android.snapTo(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(2, 1, 2))));
         android.setNoAi(!moving);
         level.addFreshEntity(android);
         return console;
@@ -313,7 +318,7 @@ public final class MeInterfaceGameTests {
 
     private static AndroidMeInterfaceBlockEntity remoteInterface(GameTestHelper h, WorkConsoleBlockEntity console) {
         h.setBlock(REMOTE_ME, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(REMOTE_ME);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(REMOTE_ME));
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());   // what a Work Location Card click does
         return me;
@@ -355,7 +360,7 @@ public final class MeInterfaceGameTests {
                 h.assertTrue(me.queue().jobs().isEmpty(), "Request still open: " + me.queue().jobs());
                 h.assertTrue(count(me.queue().outputContents(), Items.OAK_PLANKS) == 16,
                     "All 16 planks claimed by request: " + me.queue().outputContents());
-                h.assertTrue(((ChestBlockEntity) h.getBlockEntity(CHEST)).getItem(0).getCount() == 32,
+                h.assertTrue(((ChestBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(CHEST))).getItem(0).getCount() == 32,
                     "The shared chest must not be touched");
                 h.assertTrue(AndroidEscrows.snapshot(h.getLevel(), console.owner(), request[0]).phase() == AndroidEscrows.Phase.UNKNOWN,
                     "Singulo custody must be acknowledged and released");
@@ -414,11 +419,11 @@ public final class MeInterfaceGameTests {
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(me1, ModContent.ANDROID_ME_INTERFACE.get());
         h.setBlock(me2, ModContent.ANDROID_ME_INTERFACE.get());
-        var a = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(me1);
-        var b = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(me2);
+        var a = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(me1));
+        var b = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(me2));
         a.queue().setOwner(console.owner());
         b.queue().setOwner(console.owner());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(),
             "Storage cell into the drive");
         h.startSequence()
@@ -498,7 +503,7 @@ public final class MeInterfaceGameTests {
             h.assertTrue(oneOrder[0], "One order covering planks, sticks and fences expected: " + me.queue().jobs() + " orders=" + console.orders().stream().map(o -> o.steps.size()).toList());
             h.assertTrue(me.queue().jobs().isEmpty(), "Request still open: " + me.queue().jobs());
             h.assertTrue(count(me.queue().outputContents(), Items.OAK_FENCE) == 12, "12 fences: " + me.queue().outputContents());
-            h.assertTrue(((ChestBlockEntity) h.getBlockEntity(CHEST)).getItem(0).getCount() == 32, "Shared logs untouched");
+            h.assertTrue(((ChestBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(CHEST))).getItem(0).getCount() == 32, "Shared logs untouched");
         });
     }
 
@@ -510,10 +515,10 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var fence = appeng.api.stacks.AEItemKey.of(Items.OAK_FENCE);
         java.util.concurrent.Future<?>[] calc = { null };
@@ -530,13 +535,22 @@ public final class MeInterfaceGameTests {
         };
         java.util.function.Predicate<appeng.api.crafting.IPatternDetails> isChain = p ->
             p instanceof AndroidRecipePattern r && r.getDefinition().toStack().get(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
-                .copyTag().getBoolean("chain");
+                .copyTag().getBooleanOr("chain", false);
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(me.mainNode().isActive() && me.patterns().size() == 5
                 && !me.mainNode().getGrid().getCraftingService().getCraftables(k -> k.equals(fence)).isEmpty(),
                 "Interface online with its patterns registered in AE2"))
             .thenExecute(() -> {
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -551,6 +565,15 @@ public final class MeInterfaceGameTests {
                     appeng.api.networking.security.IActionSource.empty());
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS), 16L,
                     appeng.api.stacks.AEItemKey.of(Items.STICK), 8L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 0 && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16 && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -562,6 +585,15 @@ public final class MeInterfaceGameTests {
                     "Without logs, AE2 must fall back to the single-step fence pattern: " + p.patternTimes());
                 // As in the reported world: logs AND intermediates stored. The chain has the higher priority.
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 machine-origin calculations intentionally snapshot its per-tick cached inventory.
+            // Wait for the actual cache transition instead of racing it within the same server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64,
+                    "AE2 material cache has not caught up with the fixture");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -582,14 +614,14 @@ public final class MeInterfaceGameTests {
     @GameTest(template = "empty", timeoutTicks = 4800)
     public static void singuloOrderTakesMoreThanAStackFromMe(GameTestHelper h) {
         var console = workshop(h, true);
-        ((ChestBlockEntity) h.getBlockEntity(CHEST)).clearContent();
+        ((ChestBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(CHEST))).clearContent();
         BlockPos me1 = SUPPLY.above(), drive = me1.east(), power = drive.above();
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(me1, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(me1);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(me1));
         me.queue().setOwner(console.owner());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         UUID request = UUID.randomUUID();
         h.startSequence()
@@ -626,10 +658,10 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var fence = appeng.api.stacks.AEItemKey.of(Items.OAK_FENCE);
         var log = appeng.api.stacks.AEItemKey.of(Items.OAK_LOG);
@@ -680,7 +712,7 @@ public final class MeInterfaceGameTests {
     @GameTest(template = "empty", timeoutTicks = 400)
     public static void panelOnCableActsAsInterfaceAndOpensItsMenu(GameTestHelper h) {
         var console = workshop(h, false);
-        ((ChestBlockEntity) h.getBlockEntity(CHEST)).clearContent();
+        ((ChestBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(CHEST))).clearContent();
         BlockPos bus = SUPPLY.above(), drive = bus.east(), power = drive.above();
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
@@ -693,7 +725,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(panel != null, "Panel placed on the cable");
         panel.logic().queue().setOwner(console.owner());
         panel.logic().queue().setConsole(console.getBlockPos());
-        var cells = level.getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(level, h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         h.startSequence()
             .thenWaitUntil(() -> h.assertTrue(panel.getMainNode().isActive() && panel.logic().patterns().size() == 5,
@@ -714,7 +746,7 @@ public final class MeInterfaceGameTests {
                 var s = panel.logic().status();
                 h.assertTrue(s.link() == InterfaceStatus.Link.ONLINE && s.priority() == 7 && s.patterns() == 3 && s.chainPatterns() == 2
                     && s.console().equals(console.getBlockPos().toShortString()), "Synced status: " + s);
-                if (player.getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.getServer().getPlayerList().remove(player);
+                if (player.level().getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.level().getServer().getPlayerList().remove(player);
                 player.discard();
             })
             .thenSucceed();
@@ -740,10 +772,10 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         var player = h.makeMockServerPlayerInLevel();
         me.queue().setOwner(player.getUUID());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var menu = new io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceMenu(1, player.getInventory(), me);
         var deposit = menu.getSlot(0);
@@ -760,7 +792,7 @@ public final class MeInterfaceGameTests {
             long stored = me.mainNode().getGrid().getStorageService().getInventory().getAvailableStacks()
                 .get(appeng.api.stacks.AEItemKey.of(Items.COBBLESTONE));
             h.assertTrue(stored == 20 && me.queue().outputContents().isEmpty(), "Deposit reached ME: " + stored);
-            if (player.getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.getServer().getPlayerList().remove(player);
+            if (player.level().getServer().getPlayerList().getPlayer(player.getUUID()) == player) player.level().getServer().getPlayerList().remove(player);
             player.discard();
         });
     }
@@ -771,7 +803,7 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         appeng.api.parts.PartHelper.setPart(h.getLevel(), h.absolutePos(bus), null, null,
             appeng.core.definitions.AEParts.GLASS_CABLE.item(appeng.api.util.AEColor.TRANSPARENT));
@@ -782,7 +814,7 @@ public final class MeInterfaceGameTests {
     public static void statusEmitterFollowsTheNetworkOrders(GameTestHelper h) {
         BlockPos mePos = new BlockPos(2, 1, 2);
         var bus = smallNetwork(h, mePos);
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         me.queue().setOwner(UUID.randomUUID());
         var emitter = appeng.api.parts.PartHelper.setPart(h.getLevel(), h.absolutePos(bus), Direction.UP, null,
             ModContent.ANDROID_STATUS_EMITTER.get());
@@ -804,7 +836,7 @@ public final class MeInterfaceGameTests {
     public static void orderMonitorShowsTheCurrentOrder(GameTestHelper h) {
         BlockPos mePos = new BlockPos(2, 1, 2);
         var bus = smallNetwork(h, mePos);
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         me.queue().setOwner(UUID.randomUUID());
         var monitor = appeng.api.parts.PartHelper.setPart(h.getLevel(), h.absolutePos(bus), Direction.UP, null,
             ModContent.ANDROID_ORDER_MONITOR.get());
@@ -828,10 +860,10 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
         me.queue().setOwner(console.owner());
         me.queue().setConsole(console.getBlockPos());
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.ITEM_CELL_1K.stack(), false).isEmpty(), "cell");
         var planks = appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS);
         h.startSequence()
@@ -848,7 +880,7 @@ public final class MeInterfaceGameTests {
             })
             .thenExecute(() -> {
                 var registries = h.getLevel().registryAccess();
-                me.loadCustomOnly(me.saveCustomOnly(registries), registries);
+                me.loadCustomOnly(io.github.genichimaruo.appliedsingulo.compat.TagBridge.input(me.saveCustomOnly(registries), registries));
                 h.assertTrue(planks.equals(me.logic().stockItem(0)) && me.logic().stockAmount(0) == 8, "Stock setting saved");
             })
             .thenSucceed();
@@ -860,10 +892,10 @@ public final class MeInterfaceGameTests {
         var console = workshop(h, true);
         BlockPos furnacePos = new BlockPos(5, 1, 3);
         h.setBlock(furnacePos, Blocks.FURNACE);
-        ((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getBlockEntity(furnacePos)).setItem(1, new ItemStack(Items.COAL, 8));
+        ((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(furnacePos))).setItem(1, new ItemStack(Items.COAL, 8));
         var card = new ItemStack(singulo("work_location_card"));
         WorkLocationCardItem.record(card, h.getLevel(), h.absolutePos(furnacePos), Blocks.FURNACE);
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = (RecipeRackBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(RACK));
         rack.items().setStackInSlot(RecipeRackBlockEntity.COLS, card);
         var recipe = new ItemStack(singulo("recipe_card"));
         List<ItemStack> grid = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
@@ -884,7 +916,7 @@ public final class MeInterfaceGameTests {
         h.assertTrue(count(me.queue().outputContents(), Items.RAW_IRON) == 2,
             "Both input items returned unchanged");
         h.assertTrue(count(me.queue().outputContents(), Items.IRON_INGOT) == 0, "No product manufactured");
-        h.assertTrue(((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getBlockEntity(furnacePos))
+        h.assertTrue(((net.minecraft.world.level.block.entity.FurnaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(furnacePos)))
             .getItem(1).getCount() == 8, "Machine fuel untouched");
         h.succeed();
     }
@@ -905,7 +937,7 @@ public final class MeInterfaceGameTests {
         grid.set(0, new ItemStack(Items.OAK_LOG));
         RecipeData.processing(grid, new ItemStack(Items.OAK_PLANKS, 4), List.of(), ItemStack.EMPTY)
             .write(card, h.getLevel().registryAccess());
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = (RecipeRackBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(RACK));
         rack.items().setStackInSlot(1, card);
         h.assertFalse(SinguloLinks.hasEscrowRecipe(h.getLevel(), console.getBlockPos(), console.owner(),
             new ItemStack(Items.OAK_PLANKS)), "New rack recipe is unsupported");
@@ -941,16 +973,16 @@ public final class MeInterfaceGameTests {
         h.setBlock(power, appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         h.setBlock(drive, appeng.core.definitions.AEBlocks.DRIVE.block());
         h.setBlock(mePos, ModContent.ANDROID_ME_INTERFACE.get());
-        var me = (AndroidMeInterfaceBlockEntity) h.getBlockEntity(mePos);
-        var cells = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(drive), Direction.UP);
+        var me = (AndroidMeInterfaceBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(mePos));
+        var cells = driveInventory(h.getLevel(), h.absolutePos(drive));
         h.assertTrue(cells != null && cells.insertItem(0, appeng.core.definitions.AEItems.FLUID_CELL_1K.stack(), false).isEmpty(), "fluid cell");
         h.succeedWhen(() -> {
             h.assertTrue(me.mainNode().isActive(), "ME online");
             // a claimed fluid refund, as the queue holds it, goes into ME as a fluid
             var tag = new net.minecraft.nbt.CompoundTag();
             var list = new net.minecraft.nbt.ListTag();
-            list.add(io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
-                new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000)).save(h.getLevel().registryAccess()));
+            list.add(ItemStack.CODEC.encodeStart(h.getLevel().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), io.github.genichimaruo.singulo.api.android.AndroidEscrows.fluidSample(
+                new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000))).getOrThrow());
             tag.put("fluidOutputs", list);
             if (me.mainNode().getGrid().getStorageService().getInventory().getAvailableStacks().get(waterKey) == 0)
                 me.queue().load(tag, h.getLevel().registryAccess());

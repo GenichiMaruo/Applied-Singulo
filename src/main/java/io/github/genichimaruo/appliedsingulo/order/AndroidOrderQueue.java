@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -435,44 +435,46 @@ public final class AndroidOrderQueue {
     // ------------------------------------------------------------------ persistence
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        if (owner != null) tag.putUUID("owner", owner);
+        if (owner != null) tag.store("owner", net.minecraft.core.UUIDUtil.CODEC, owner);
         if (console != null) tag.putLong("console", console.asLong());
-        tag.put("outputs", outputs.serializeNBT(registries));
+        var out = io.github.genichimaruo.appliedsingulo.compat.TagBridge.output(registries);
+        outputs.serialize(out);
+        tag.put("outputs", out.buildResult());
         var list = new ListTag();
         for (var job : jobs) list.add(job.save(registries));
         tag.put("jobs", list);
         var later = new ListTag();
-        for (var s : returnLater) later.add(s.save(registries));
+        for (var s : returnLater) later.add(ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), s).getOrThrow());
         tag.put("returnLater", later);
         var fluids = new ListTag();
-        for (var s : fluidOutputs) fluids.add(s.save(registries));
+        for (var s : fluidOutputs) fluids.add(ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), s).getOrThrow());
         tag.put("fluidOutputs", fluids);
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
-        owner = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
-        console = tag.contains("console") ? BlockPos.of(tag.getLong("console")) : null;
+        owner = tag.read("owner", net.minecraft.core.UUIDUtil.CODEC).isPresent() ? tag.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElseThrow() : null;
+        console = tag.contains("console") ? BlockPos.of(tag.getLongOr("console", 0L)) : null;
         for (int i = 0; i < OUTPUT_SLOTS; i++) outputs.setStackInSlot(i, ItemStack.EMPTY);
         returnLater.clear();
         if (tag.contains("outputs")) {
             var loaded = new ItemStackHandler();
-            loaded.deserializeNBT(registries, tag.getCompound("outputs"));
+            loaded.deserialize(io.github.genichimaruo.appliedsingulo.compat.TagBridge.input(tag.getCompoundOrEmpty("outputs"), registries));
             for (int i = 0; i < loaded.getSlots(); i++) {
                 var rest = ItemHandlerHelper.insertItemStacked(outputs, loaded.getStackInSlot(i).copy(), false);
                 if (!rest.isEmpty()) returnLater.add(rest);
             }
         }
         fluidOutputs.clear();
-        for (Tag t : tag.getList("fluidOutputs", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+        for (Tag t : tag.getListOrEmpty("fluidOutputs")) {
+            var s = ItemStack.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), (CompoundTag) t).result().orElse(ItemStack.EMPTY);
             if (!s.isEmpty()) fluidOutputs.add(s);
         }
-        for (Tag t : tag.getList("returnLater", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+        for (Tag t : tag.getListOrEmpty("returnLater")) {
+            var s = ItemStack.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), (CompoundTag) t).result().orElse(ItemStack.EMPTY);
             if (!s.isEmpty()) returnLater.add(s);
         }
         jobs.clear();
-        for (Tag t : tag.getList("jobs", Tag.TAG_COMPOUND)) {
+        for (Tag t : tag.getListOrEmpty("jobs")) {
             var job = OrderJob.load((CompoundTag) t, registries);
             if (job != null) jobs.add(job);
         }

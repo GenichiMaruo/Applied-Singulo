@@ -1,24 +1,18 @@
 {
-  "Singulo-0.19.0-1.21.1N.jar": {
+  "Singulo-0.19.0-26.1.2N.jar": {
     "property": "singuloJar",
-    "url": "https://edge.forgecdn.net/files/9617/80/Singulo-0.19.0-1.21.1N.jar",
-    "sha256": "ec45f7d6a6a9dbac654c7a2048df085ca709f055868def39aeee4132d44ed942",
-    "unreleased": false,
-    "publication_status": "approved",
-    "curseforge_file_id": 9617080,
-    "source_commit": "0f6fcff7645a2a5066a072acce55d4a03884080e",
-    "verified_ci_run": 43628318212,
-    "note": "CurseForge file approved and generally public. Official CDN bytes match the successful tagged CI JAR exactly.",
-    "public_url": "https://www.curseforge.com/minecraft/mc-mods/singulo/files/9617080"
+    "url": "https://edge.forgecdn.net/files/9627/445/Singulo-0.19.0-26.1.2N.jar",
+    "sha256": "891f6d67453bc7bbb55db6003464e0fbbc629f2b6a944192e4657cf95df51f1b",
+    "note": "Official CI 43703005408 artifact; CurseForge file 9627445 approved and generally public. CDN SHA-256 verified."
   },
-  "appliedenergistics2-19.2.19.jar": {
-    "property": "ae2Jar",
-    "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/neoforge/v19.2.19/appliedenergistics2-19.2.19.jar",
-    "sha256": "7db959595ca8734acccac51c963567460e7db9f31b145b23dea72778b692777b"
+  "appliedenergistics2-26.1.13-beta.jar": {
+    "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/v26.1.13-beta/appliedenergistics2-26.1.13-beta.jar",
+    "sha256": "6474119c645a21f509da518845ab42bff84d496f80a86ce5e551d7a4745b4893",
+    "property": "ae2Jar"
   },
-  "guideme-21.1.1.jar": {
-    "property": "guideMeJar",
-    "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v21.1.1/guideme-21.1.1.jar",
-    "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
+  "guideme-26.1.14-beta.jar": {
+    "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v26.1.14-beta/guideme-26.1.14-beta.jar",
+    "sha256": "28887ce18eddd4107722899248ae36cea31fba4696522563703ecf093a42b4a3",
+    "property": "guideMeJar"
   }
 }

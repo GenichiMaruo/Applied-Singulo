@@ -14,10 +14,10 @@ import net.minecraft.world.entity.player.Player;
  * {@link InterfaceStatus}, AE2's standard priority sub-screen, and a "cancel all orders" action.
  */
 public final class AndroidInterfaceMenu extends AEBaseMenu {
-    private static final String ACTION_CANCEL_ALL = "cancelAll";
-    private static final String ACTION_SET_STOCK = "setStock";
+    private static final appeng.menu.guisync.ClientActionKey<Void> ACTION_CANCEL_ALL = new appeng.menu.guisync.ClientActionKey<>("cancelAll");
+    private static final appeng.menu.guisync.ClientActionKey<StockAction> ACTION_SET_STOCK = new appeng.menu.guisync.ClientActionKey<>("setStock");
 
-    /** Client action payload (serialised by AE2 as JSON). */
+    /** Client action payload (encoded with explicit bounded fields). */
     public static final class StockAction {
         public int slot;
         public String item = "";
@@ -53,7 +53,7 @@ public final class AndroidInterfaceMenu extends AEBaseMenu {
         for (int i = 0; i < DEPOSIT_SLOTS; i++) addSlot(new DepositSlot(buffer, i), SlotSemantics.STORAGE);
         createPlayerInventorySlots(playerInventory);
         registerClientAction(ACTION_CANCEL_ALL, this::cancelAll);
-        registerClientAction(ACTION_SET_STOCK, StockAction.class, this::setStock);
+        registerClientAction(ACTION_SET_STOCK, net.minecraft.network.codec.StreamCodec.of((buf, action) -> { buf.writeVarInt(action.slot); buf.writeUtf(action.item, 32767); buf.writeVarLong(action.amount); }, buf -> new StockAction(buf.readVarInt(), buf.readUtf(32767), buf.readVarLong())), this::setStock);
     }
 
     public static void open(Player player, MenuHostLocator locator) {
@@ -75,7 +75,7 @@ public final class AndroidInterfaceMenu extends AEBaseMenu {
             return;
         }
         if (!host.logic().mayUse(getPlayer())) return;
-        var id = net.minecraft.resources.ResourceLocation.tryParse(action.item);
+        var id = net.minecraft.resources.Identifier.tryParse(action.item);
         var item = id == null || action.item.isEmpty() ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
         host.logic().setStock(action.slot, item == null ? null : appeng.api.stacks.AEItemKey.of(item), item == null ? 0 : action.amount);
     }

@@ -13,8 +13,9 @@ public final class AppliedSingulo {
     public static final String MOD_ID = "applied_singulo";
     public AppliedSingulo(IEventBus modBus) {
         ModContent.register(modBus);
+        if (Boolean.getBoolean("applied_singulo.gametest")) io.github.genichimaruo.appliedsingulo.gametest.PortGameTests.init(modBus);
         NeoForge.EVENT_BUS.addListener(AndroidOrderCommands::register);
         NeoForge.EVENT_BUS.addListener(OrphanedEscrows::onLevelTick);
-        if (FMLEnvironment.dist.isClient()) io.github.genichimaruo.appliedsingulo.client.ClientSetup.init(modBus);
+        if (FMLEnvironment.getDist().isClient()) io.github.genichimaruo.appliedsingulo.client.ClientSetup.init(modBus);
     }
 }

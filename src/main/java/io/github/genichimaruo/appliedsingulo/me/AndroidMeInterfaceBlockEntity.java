@@ -10,7 +10,7 @@ import io.github.genichimaruo.appliedsingulo.order.AndroidOrderQueue;
 import io.github.genichimaruo.appliedsingulo.registry.ModContent;
 import java.util.EnumSet;
 import java.util.List;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -65,7 +65,7 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide)
+        if (level != null && !level.isClientSide())
             GridHelper.onFirstTick(this, be -> {
                 be.mainNode.create(be.level, be.worldPosition);
                 be.logic.onMainNodeCreated(be.level, be.worldPosition);
@@ -95,20 +95,33 @@ public final class AndroidMeInterfaceBlockEntity extends BlockEntity implements 
         be.logic.tick((ServerLevel) level);
     }
 
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level instanceof ServerLevel) {
+            for (var drop : logic.breakDown()) net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
     // ------------------------------------------------------------------ persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        var registries = level.registryAccess();
+        var tag = new CompoundTag();
+        super.saveAdditional(output);
         logic.save(tag, registries);
-        mainNode.saveToNBT(tag);
+        mainNode.serialize(output);
         tag.putInt("schema", 3);
+        output.store(io.github.genichimaruo.appliedsingulo.compat.TagBridge.ROOT, tag);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        var registries = input.lookup();
+        var tag = input.read(io.github.genichimaruo.appliedsingulo.compat.TagBridge.ROOT).orElseGet(CompoundTag::new);
+        super.loadAdditional(input);
         logic.load(tag, registries);
-        mainNode.loadFromNBT(tag);
+        mainNode.deserialize(input);
     }
 }

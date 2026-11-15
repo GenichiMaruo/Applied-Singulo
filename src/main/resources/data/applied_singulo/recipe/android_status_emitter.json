@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shapeless",
   "category": "redstone",
   "ingredients": [
-    {
-      "item": "ae2:level_emitter"
-    },
-    {
-      "item": "ae2:logic_processor"
-    },
-    {
-      "item": "singulo:ruin_lamp"
-    }
+    "ae2:level_emitter",
+    "ae2:logic_processor",
+    "singulo:ruin_lamp"
   ],
   "result": {
     "id": "applied_singulo:android_status_emitter",

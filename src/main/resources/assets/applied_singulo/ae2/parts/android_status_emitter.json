@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "ae2:level_emitter",
+    "on": "applied_singulo:part/android_status_emitter_on",
+    "off": "applied_singulo:part/android_status_emitter_off"
+  }
+}

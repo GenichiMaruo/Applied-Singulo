@@ -3,7 +3,7 @@ package io.github.genichimaruo.appliedsingulo.order;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -114,15 +114,15 @@ public final class OrderJob {
 
     public CompoundTag save(HolderLookup.Provider registries) {
         var tag = new CompoundTag();
-        tag.putUUID("request", request);
+        tag.store("request", net.minecraft.core.UUIDUtil.CODEC, request);
         tag.putLong("console", console.asLong());
-        tag.put("target", target.save(registries));
+        tag.put("target", ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), target).getOrThrow());
         tag.putLong("count", count);
         tag.putInt("pushes", pushes);
         tag.putString("state", state.name());
         tag.putBoolean("submitted", submitted);
         var list = new ListTag();
-        for (var s : materials) if (!s.isEmpty()) list.add(s.save(registries));
+        for (var s : materials) if (!s.isEmpty()) list.add(ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), s).getOrThrow());
         tag.put("materials", list);
         tag.putLong("delivered", delivered);
         tag.putLong("claimedProducts", claimedProducts);
@@ -138,33 +138,33 @@ public final class OrderJob {
 
     @Nullable
     public static OrderJob load(CompoundTag tag, HolderLookup.Provider registries) {
-        if (!tag.hasUUID("request")) return null;
-        var target = ItemStack.parseOptional(registries, tag.getCompound("target"));
-        long count = tag.getLong("count");
+        if (!tag.read("request", net.minecraft.core.UUIDUtil.CODEC).isPresent()) return null;
+        var target = ItemStack.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag.getCompoundOrEmpty("target")).result().orElse(ItemStack.EMPTY);
+        long count = tag.getLongOr("count", 0L);
         if (target.isEmpty() || count <= 0) return null;
-        var job = new OrderJob(tag.getUUID("request"), BlockPos.of(tag.getLong("console")), target, count);
-        job.submitted = tag.getBoolean("submitted");
+        var job = new OrderJob(tag.read("request", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), BlockPos.of(tag.getLongOr("console", 0L)), target, count);
+        job.submitted = tag.getBooleanOr("submitted", false);
         try {
-            job.state = State.valueOf(tag.getString("state"));
+            job.state = State.valueOf(tag.getStringOr("state", ""));
         } catch (IllegalArgumentException unknown) {
             // Re-query Singulo rather than guessing. An unsubmitted job may simply be offered again: a replay
             // of an accepted request never transfers materials twice.
             job.state = job.submitted ? State.RUNNING : State.QUEUED;
         }
-        for (Tag t : tag.getList("materials", Tag.TAG_COMPOUND)) {
-            var s = ItemStack.parseOptional(registries, (CompoundTag) t);
+        for (Tag t : tag.getListOrEmpty("materials")) {
+            var s = ItemStack.CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), (CompoundTag) t).result().orElse(ItemStack.EMPTY);
             if (!s.isEmpty()) job.materials.add(s);
         }
-        job.pushes = Math.max(1, tag.getInt("pushes"));
-        job.delivered = tag.getLong("delivered");
-        job.claimedProducts = tag.getLong("claimedProducts");
-        job.claimedMaterials = tag.getLong("claimedMaterials");
-        job.firstPush = tag.getLong("firstPush");
-        job.lastPush = tag.getLong("lastPush");
-        job.retryAt = tag.getLong("retryAt");
-        job.finishedAt = tag.getLong("finishedAt");
-        job.quarantined = tag.getBoolean("quarantined");
-        job.reason = tag.contains("reason") ? tag.getString("reason") : null;
+        job.pushes = Math.max(1, tag.getIntOr("pushes", 0));
+        job.delivered = tag.getLongOr("delivered", 0L);
+        job.claimedProducts = tag.getLongOr("claimedProducts", 0L);
+        job.claimedMaterials = tag.getLongOr("claimedMaterials", 0L);
+        job.firstPush = tag.getLongOr("firstPush", 0L);
+        job.lastPush = tag.getLongOr("lastPush", 0L);
+        job.retryAt = tag.getLongOr("retryAt", 0L);
+        job.finishedAt = tag.getLongOr("finishedAt", 0L);
+        job.quarantined = tag.getBooleanOr("quarantined", false);
+        job.reason = tag.contains("reason") ? tag.getStringOr("reason", "") : null;
         return job;
     }
 }

@@ -1,7 +1,6 @@
 package io.github.genichimaruo.appliedsingulo.registry;
 
 import appeng.api.AECapabilities;
-import appeng.api.parts.PartModels;
 import appeng.api.parts.RegisterPartCapabilitiesEvent;
 import appeng.items.parts.PartItem;
 import appeng.menu.implementations.MenuTypeBuilder;
@@ -15,7 +14,7 @@ import io.github.genichimaruo.appliedsingulo.me.AndroidOrderMonitorPart;
 import io.github.genichimaruo.appliedsingulo.me.AndroidStatusEmitterPart;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -47,35 +46,34 @@ public final class ModContent {
         return BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.5F, 6F).sound(SoundType.METAL);
     }
 
-    public static final DeferredBlock<AndroidMeInterfaceBlock> ANDROID_ME_INTERFACE = BLOCKS.register(
-        "android_me_interface", () -> new AndroidMeInterfaceBlock(machine()));
+    public static final DeferredBlock<AndroidMeInterfaceBlock> ANDROID_ME_INTERFACE = BLOCKS.registerBlock(
+        "android_me_interface", AndroidMeInterfaceBlock::new, ModContent::machine);
     public static final DeferredItem<BlockItem> ANDROID_ME_INTERFACE_ITEM =
-        ITEMS.registerSimpleBlockItem(ANDROID_ME_INTERFACE, new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ANDROID_ME_INTERFACE, Item.Properties::new);
 
     /** The interface as an AE2 cable panel (part). */
-    public static final DeferredItem<PartItem<AndroidInterfacePart>> ANDROID_ME_INTERFACE_PANEL = ITEMS.register(
-        "android_me_interface_panel", () -> new PartItem<>(new Item.Properties(), AndroidInterfacePart.class, AndroidInterfacePart::new));
+    public static final DeferredItem<PartItem<AndroidInterfacePart>> ANDROID_ME_INTERFACE_PANEL = ITEMS.registerItem(
+        "android_me_interface_panel", props -> new PartItem<>(props, AndroidInterfacePart.class, AndroidInterfacePart::new));
 
     /** Redstone signal from the order state of the network's Android ME Interfaces. */
-    public static final DeferredItem<PartItem<AndroidStatusEmitterPart>> ANDROID_STATUS_EMITTER = ITEMS.register(
-        "android_status_emitter", () -> new PartItem<>(new Item.Properties(), AndroidStatusEmitterPart.class, AndroidStatusEmitterPart::new));
+    public static final DeferredItem<PartItem<AndroidStatusEmitterPart>> ANDROID_STATUS_EMITTER = ITEMS.registerItem(
+        "android_status_emitter", props -> new PartItem<>(props, AndroidStatusEmitterPart.class, AndroidStatusEmitterPart::new));
 
     /** Shows the network's current Android order on a cable panel. */
-    public static final DeferredItem<PartItem<AndroidOrderMonitorPart>> ANDROID_ORDER_MONITOR = ITEMS.register(
-        "android_order_monitor", () -> new PartItem<>(new Item.Properties(), AndroidOrderMonitorPart.class, AndroidOrderMonitorPart::new));
+    public static final DeferredItem<PartItem<AndroidOrderMonitorPart>> ANDROID_ORDER_MONITOR = ITEMS.registerItem(
+        "android_order_monitor", props -> new PartItem<>(props, AndroidOrderMonitorPart.class, AndroidOrderMonitorPart::new));
 
     /** Hidden definition item of auto-generated AE2 patterns; never obtainable in survival. */
     public static final DeferredItem<Item> ANDROID_RECIPE_PATTERN =
-        ITEMS.registerSimpleItem("android_recipe_pattern", new Item.Properties().stacksTo(1));
+        ITEMS.registerSimpleItem("android_recipe_pattern", () -> new Item.Properties().stacksTo(1));
 
     @SuppressWarnings("DataFlowIssue")
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AndroidMeInterfaceBlockEntity>> ANDROID_ME_INTERFACE_ENTITY =
-        BLOCK_ENTITIES.register("android_me_interface", () -> BlockEntityType.Builder
-            .of(AndroidMeInterfaceBlockEntity::new, ANDROID_ME_INTERFACE.get()).build(null));
+        BLOCK_ENTITIES.register("android_me_interface", () -> new BlockEntityType<>(AndroidMeInterfaceBlockEntity::new, ANDROID_ME_INTERFACE.get()));
 
     public static final DeferredHolder<MenuType<?>, MenuType<AndroidInterfaceMenu>> ANDROID_INTERFACE_MENU = MENUS.register(
         "android_interface", () -> MenuTypeBuilder.create(AndroidInterfaceMenu::new, AndroidInterfaceHost.class)
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AppliedSingulo.MOD_ID, "android_interface")));
+            .buildUnregistered(Identifier.fromNamespaceAndPath(AppliedSingulo.MOD_ID, "android_interface")));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("main", () ->
         CreativeModeTab.builder()
@@ -95,9 +93,6 @@ public final class ModContent {
         BLOCK_ENTITIES.register(modBus);
         MENUS.register(modBus);
         TABS.register(modBus);
-        PartModels.registerModels(AndroidInterfacePart.MODELS);
-        PartModels.registerModels(AndroidStatusEmitterPart.MODELS);
-        PartModels.registerModels(AndroidOrderMonitorPart.MODELS);
         modBus.addListener(ModContent::registerCapabilities);
         modBus.addListener(ModContent::registerPartCapabilities);
     }
@@ -106,11 +101,11 @@ public final class ModContent {
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, ANDROID_ME_INTERFACE_ENTITY.get(),
             (me, context) -> me);
         // The ME network as Singulo storage (only towards the owner's Supply Ports / Work Console).
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ANDROID_ME_INTERFACE_ENTITY.get(),
+        event.registerBlockEntity(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, ANDROID_ME_INTERFACE_ENTITY.get(),
             AndroidMeInterfaceBlockEntity::storageView);
     }
 
     private static void registerPartCapabilities(RegisterPartCapabilitiesEvent event) {
-        event.register(Capabilities.ItemHandler.BLOCK, (part, side) -> part.storageView(), AndroidInterfacePart.class);
+        event.register(io.github.genichimaruo.singulo.api.android.AndroidStorageCapabilities.SHARED_ITEMS, (part, side) -> part.storageView(), AndroidInterfacePart.class);
     }
 }
