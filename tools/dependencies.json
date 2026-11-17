@@ -11,11 +11,9 @@
   },
   "Singulo-0.20.0-1.20.1F.jar": {
     "property": "singuloJar",
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "commit": "223c755702e1b1a4bacc634cd173b877e404d969",
-    "unreleased": true,
-    "note": "Provisional port candidate only. Final core review, public artifact pins and fresh CI required before merge/publication.",
-    "loader": "forge"
+    "loader": "forge",
+    "url": "https://edge.forgecdn.net/files/9660/568/Singulo-0.20.0-1.20.1F.jar",
+    "sha256": "d330d57cc02762b5bfb56fbc93d950aa7fb930d3039655c3b3692d5c407df996"
   },
   "Singulo-0.20.0-1.20.1N.jar": {
     "property": "singuloJar",
