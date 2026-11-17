@@ -1,3 +1,7 @@
+# Applied Singulo 0.1.1 compatibility branch
+
+This branch targets Applied Singulo 0.1.1 Beta for Minecraft 1.21.1 NeoForge and the generally public Singulo 0.20.0 release. Final release readiness requires fresh CI, review and promotion of the verified artifact. The 0.1.0 / 0.19.x text below documents the previous release, not the current branch dependency.
+
 # Applied Singulo
 
 Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネットワークをつなぐアドオンです。

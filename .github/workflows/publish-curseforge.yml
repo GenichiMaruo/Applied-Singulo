@@ -1,0 +1,144 @@
+name: Publish CurseForge
+
+# Promote the tested JARs; creating a tag alone never rebuilds or uploads.
+on:
+  workflow_dispatch:
+    inputs:
+      verified_run_id:
+        description: 'Successful maintained-branch Build run with all 45 GameTests'
+        required: true
+        type: string
+      release_tag:
+        description: 'Existing immutable v<mod_version> tag'
+        required: true
+        type: string
+      release_type:
+        description: 'This verified release is Beta only'
+        type: choice
+        options: [beta]
+        default: beta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curseforge-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/1.21.1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: curseforge
+    permissions:
+      contents: write
+      actions: read
+    env:
+      VERIFIED_RUN_ID: ${{ inputs.verified_run_id }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      REQUESTED_TYPE: ${{ inputs.release_type }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release_tag }}
+          path: release-source
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Validate version and changelog
+        id: version
+        working-directory: release-source
+        shell: bash
+        run: |
+          version=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')
+          mod_name=$(sed -n 's/^mod_name=//p' gradle.properties | tr -d '\r')
+          minecraft=$(sed -n 's/^minecraft_version=//p' gradle.properties | tr -d '\r')
+          [[ "$RELEASE_TAG" == "v$version" && "$minecraft" == 1.21.1 ]] || exit 1
+          test -f "docs/curseforge/changelog-$version.md"
+          type="$REQUESTED_TYPE"
+          if [[ "$type" == auto ]]; then
+            if [[ "$version" =~ ^([0-9]+)\.[0-9]+\.[0-9]+$ ]] && (( BASH_REMATCH[1] >= 1 )); then type=release; else type=beta; fi
+          fi
+          [[ "$type" == beta ]] || exit 1
+          echo "type=$type" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "neo_name=Applied-Singulo-$version-${minecraft}N" >> "$GITHUB_OUTPUT"
+      - name: Verify CI provenance and exact tagged source
+        id: verified
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/verified_release.py check --repo "$GITHUB_REPOSITORY" --run "$VERIFIED_RUN_ID" --tag "$RELEASE_TAG" --source release-source
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.verified_run_id }}
+          name: ${{ steps.verified.outputs.neoforge_artifact }}
+          path: verified-artifacts/${{ steps.verified.outputs.neoforge_artifact }}
+      - name: Promote the validated production JAR without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/verified_release.py promote --repo "$GITHUB_REPOSITORY" --run "$VERIFIED_RUN_ID" --tag "$RELEASE_TAG" --source release-source
+      - name: Verify configured destination without exposing its value
+        env:
+          CONFIGURED_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID || vars.CURSEFORGE_PROJECT_ID }}
+        shell: bash
+        run: test "$CONFIGURED_PROJECT_ID" = '1806522'
+      - name: Acquire permanent shared CurseForge upload lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/curseforge_guard.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --commit "$(git -C release-source rev-parse HEAD)" --run-id "$GITHUB_RUN_ID" --receipt cf-lock-receipt.json
+      - name: Reserve an asset-free release audit record
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TYPE: ${{ steps.version.outputs.type }}
+        run: |
+          cp "release-source/docs/curseforge/changelog-$VERSION.md" release-notes.md
+          cat >> release-notes.md <<'NOTES'
+
+          Download the NeoForge JAR from CurseForge: https://www.curseforge.com/minecraft/mc-mods/applied-singulo/files
+          NOTES
+          prerelease=--prerelease
+          if [[ "$TYPE" == release ]]; then prerelease=--prerelease=false; fi
+          # A failed upload keeps this draft: inspect CF before attempting any retry.
+          gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --draft "$prerelease" --latest=false --title "Applied Singulo $VERSION" --notes-file release-notes.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-release-${{ steps.version.outputs.version }}-1.21.1
+          path: release-artifacts/
+          if-no-files-found: error
+      - name: Publish NeoForge to CurseForge
+        uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
+        with:
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID || vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: release-artifacts/${{ steps.version.outputs.neo_name }}.jar
+          name: ${{ steps.version.outputs.neo_name }}
+          version: ${{ steps.version.outputs.version }}
+          version-type: ${{ steps.version.outputs.type }}
+          changelog-file: release-source/docs/curseforge/changelog-${{ steps.version.outputs.version }}.md
+          loaders: neoforge
+          game-versions: '1.21.1'
+          java: '21'
+          dependencies: |
+            singulo(required)
+            applied-energistics-2(required)
+          # An accepted upload can still return 5xx; never retry that POST automatically.
+          retry-attempts: 1
+          fail-mode: fail
+      - name: Publish release notes with CurseForge links only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest=false
+      - name: Retain permanent CF lock intent
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cf-lock-${{ github.run_id }}-${{ github.run_attempt }}
+          path: cf-lock-receipt.json
+          if-no-files-found: ignore

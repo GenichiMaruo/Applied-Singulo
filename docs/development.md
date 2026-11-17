@@ -27,3 +27,13 @@ preparing a CI receipt. This does not authorize publishing Applied Singulo itsel
   source and the current GitHub Actions commit. Use only a fresh CI build -> tests -> manifest artifact,
   never an old local JAR relabelled with a new commit.
 - Metadata requires `[0.19.0,0.20.0)`. No Applied CF/Modrinth publication or merge is authorized here.
+
+## Singulo 0.20.0 compatibility preparation
+
+Applied Singulo 0.1.1 Beta targets Minecraft 1.21.1 NeoForge and Singulo [0.20.0,0.21.0). The dependency is the approved, generally public CurseForge file 9660320, pinned to its official HTTPS CDN URL and verified SHA-256. Its bytes match the final Singulo release CI artifact (merge 01a91af281c88423ba9066aa435cb1e304a8f04d). Fresh CI, independent review and a maintained-branch release receipt remain mandatory before publication. The owner has configured the curseforge Environment and authorized its use. Earlier 0.19.0 notes above describe the previous release.
+
+## CurseForge publication (1.21.1)
+
+Run Publish CurseForge manually on 1.21.1 after review and merge. Supply a successful first-attempt maintained-branch Build run and immutable v<mod_version> tag at that exact commit. Complete artifact ZIP digest, manifest, JAR and log hashes are checked before promotion. No rebuild occurs. Public dependency pins are mandatory. Use only configured curseforge Environment secrets.
+
+The permanent create-only upload-lock tag precedes the asset-free draft audit release and single upload attempt. Never delete/adopt the lock or automatically retry failed/uncertain submissions. Inspect CurseForge first. Keep lock tags and maintained branches during cleanup. Submission is not moderation approval; verify the file separately.
