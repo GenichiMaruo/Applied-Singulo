@@ -1,3 +1,5 @@
+> Compatibility preparation: Applied Singulo 0.1.1 Beta / Minecraft 1.20.1 / Singulo 0.20.x. See [current compatibility gates](docs/singulo-020-compatibility.md). Historical 0.1.0 notes below are not the current dependency specification.
+
 # Applied Singulo
 
 Singulo のアンドロイド自動化と Applied Energistics 2 (AE2) の ME ネットワークをつなぐアドオンです。

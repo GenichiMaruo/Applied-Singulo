@@ -28,7 +28,9 @@ def dependencyJar = { String name, Map spec ->
     providers.gradleProperty(spec.property).map { file(it) }.getOrElse(file("libs/${name}"))
 }
 def runCommand = { List<String> command, File dir ->
-    def process = new ProcessBuilder(command.collect { it.toString() }).directory(dir).inheritIO().start()
+    def process = new ProcessBuilder(command.collect { it.toString() }).directory(dir).redirectErrorStream(true).start()
+    // Drain nested Gradle output instead of inheriting the outer daemon's console pipe.
+    process.inputStream.withReader('UTF-8') { reader -> reader.eachLine { logger.lifecycle(it) } }
     if (process.waitFor() != 0) throw new GradleException("Command failed (${process.exitValue()}): ${command.join(' ')}")
 }
 def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
@@ -63,9 +65,10 @@ def buildFromSource = { String name, Map spec ->
         project.copy { from project.zipTree(zip); into src }
     }
     logger.lifecycle("Building unreleased ${name} from ${spec.commit.take(12)} (first time only)")
-    runCommand(isWindows ? ['cmd', '/c', new File(src, 'gradlew.bat').absolutePath, '--no-daemon', '-q', 'jar']
-                         : ['bash', 'gradlew', '--no-daemon', '-q', 'jar'], src)
-    def built = new File(src, "build/libs/${name}")
+    if (!(spec.loader in ['forge', 'neoforge'])) throw new GradleException('Source dependency requires a known legacy loader')
+    def command = isWindows ? ['cmd', '/c', new File(src, 'gradlew.bat').absolutePath] : ['bash', 'gradlew']
+    runCommand(command + ['--no-daemon', '--console=plain', '-q', "-Ploader=${spec.loader}", 'jar'], src)
+    def built = new File(src, "build/${spec.loader}/libs/${name}")
     if (!built.isFile()) throw new GradleException("Source build did not produce ${built}")
     jar.parentFile.mkdirs()
     java.nio.file.Files.copy(built.toPath(), jar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)

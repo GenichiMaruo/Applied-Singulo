@@ -1,26 +1,4 @@
 {
-  "Singulo-0.19.0-1.20.1F.jar": {
-    "property": "singuloJar",
-    "loader": "forge",
-    "url": "https://edge.forgecdn.net/files/9617/113/Singulo-0.19.0-1.20.1F.jar",
-    "sha256": "7d55f1236e5e7c2c6c71ace4a8b1f4c7fc0451637e59dbd576221b807b9adc8b",
-    "note": "Approved and publicly downloadable on CurseForge, verified 2026-11-14 20:00 UTC; CDN bytes match successful CI and official publish artifacts.",
-    "curseforge_file_id": 9617113,
-    "source_commit": "98bc49f7ab0805bad808b7ce62a160b9747b01ec",
-    "verified_run_id": 43628507887,
-    "tree": "66c0e56b721163e5c66acad276078ddaa90f29df"
-  },
-  "Singulo-0.19.0-1.20.1N.jar": {
-    "property": "singuloJar",
-    "loader": "neoforge",
-    "url": "https://edge.forgecdn.net/files/9617/131/Singulo-0.19.0-1.20.1N.jar",
-    "sha256": "bf0cf02789fc95f94db710669947b6c1c03b3151c7f7254203554dd83a493c13",
-    "note": "Approved and publicly downloadable on CurseForge, verified 2026-11-14 20:00 UTC; CDN bytes match successful CI and official publish artifacts.",
-    "curseforge_file_id": 9617131,
-    "source_commit": "98bc49f7ab0805bad808b7ce62a160b9747b01ec",
-    "verified_run_id": 43628507887,
-    "tree": "66c0e56b721163e5c66acad276078ddaa90f29df"
-  },
   "appliedenergistics2-forge-15.4.12.jar": {
     "property": "ae2Jar",
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge/v15.4.12/appliedenergistics2-forge-15.4.12.jar",
@@ -30,5 +8,21 @@
     "property": "guideMeJar",
     "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v20.1.7/guideme-20.1.7.jar",
     "sha256": "f01612808bbd8ea469de26c1970fe6dfb71f4a1fb78311155342fd048a137e95"
+  },
+  "Singulo-0.20.0-1.20.1F.jar": {
+    "property": "singuloJar",
+    "repository": "https://github.com/GenichiMaruo/Singulo.git",
+    "commit": "223c755702e1b1a4bacc634cd173b877e404d969",
+    "unreleased": true,
+    "note": "Provisional port candidate only. Final core review, public artifact pins and fresh CI required before merge/publication.",
+    "loader": "forge"
+  },
+  "Singulo-0.20.0-1.20.1N.jar": {
+    "property": "singuloJar",
+    "repository": "https://github.com/GenichiMaruo/Singulo.git",
+    "commit": "223c755702e1b1a4bacc634cd173b877e404d969",
+    "unreleased": true,
+    "note": "Provisional port candidate only. Final core review, public artifact pins and fresh CI required before merge/publication.",
+    "loader": "neoforge"
   }
 }

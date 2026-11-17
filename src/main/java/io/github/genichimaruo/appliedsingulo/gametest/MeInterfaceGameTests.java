@@ -543,6 +543,16 @@ public final class MeInterfaceGameTests {
                 "Interface online with its patterns registered in AE2"))
             .thenExecute(() -> {
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 simulations snapshot the cached inventory after the server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 0
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 0,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -557,6 +567,16 @@ public final class MeInterfaceGameTests {
                     appeng.api.networking.security.IActionSource.empty());
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS), 16L,
                     appeng.api.stacks.AEItemKey.of(Items.STICK), 8L));
+            })
+            // AE2 simulations snapshot the cached inventory after the server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 0
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -568,6 +588,16 @@ public final class MeInterfaceGameTests {
                     "Without logs, AE2 must fall back to the single-step fence pattern: " + p.patternTimes());
                 // As in the reported world: logs AND intermediates stored. The chain has the higher priority.
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 simulations snapshot the cached inventory after the server tick.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -650,8 +680,15 @@ public final class MeInterfaceGameTests {
                 && !me.mainNode().getGrid().getCraftingService().getCraftables(k -> k.equals(fence)).isEmpty(),
                 "Interface, patterns and crafting CPU online"))
             .thenExecute(() -> {
+                // Exercise the stale-snapshot regression before adding materials.
+                me.mainNode().getGrid().getStorageService().getCachedInventory();
                 me.mainNode().getGrid().getStorageService().getInventory().insert(log, 64,
                     appeng.api.config.Actionable.MODULATE, appeng.api.networking.security.IActionSource.empty());
+            })
+            .thenWaitUntil(() -> h.assertTrue(
+                me.mainNode().getGrid().getStorageService().getCachedInventory().get(log) == 64,
+                "Crafting snapshot contains the inserted logs"))
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 24,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
