@@ -30,7 +30,7 @@ preparing a CI receipt. This does not authorize publishing Applied Singulo itsel
 
 ## Singulo 0.20.0 compatibility preparation
 
-The fix/singulo-020-compat-1211 branch prepares Applied Singulo 0.1.1 Beta for Minecraft 1.21.1 NeoForge and Singulo [0.20.0,0.21.0). The dependency is temporarily pinned to reviewed PR #79 source, not a published release. This branch must not be published until the final Singulo commit has passed compatibility tests, the official dependency URL and SHA-256 are pinned, and fresh CI produces a release receipt. The owner has configured the curseforge Environment and authorized its use; final public dependency pins and CI verification remain required. Earlier 0.19.0 notes above describe the previous release.
+Applied Singulo 0.1.1 Beta targets Minecraft 1.21.1 NeoForge and Singulo [0.20.0,0.21.0). The dependency is the approved, generally public CurseForge file 9660320, pinned to its official HTTPS CDN URL and verified SHA-256. Its bytes match the final Singulo release CI artifact (merge 01a91af281c88423ba9066aa435cb1e304a8f04d). Fresh CI, independent review and a maintained-branch release receipt remain mandatory before publication. The owner has configured the curseforge Environment and authorized its use. Earlier 0.19.0 notes above describe the previous release.
 
 ## CurseForge publication (1.21.1)
 

@@ -10,10 +10,8 @@
     "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
   },
   "Singulo-0.20.0-1.21.1N.jar": {
-    "note": "Development compatibility pin; replace with final public artifact and rerun CI before publication.",
     "property": "singuloJar",
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "commit": "5eddee390c3847a46e372187dc2c6c2105d549e8",
-    "unreleased": true
+    "url": "https://edge.forgecdn.net/files/9660/320/Singulo-0.20.0-1.21.1N.jar",
+    "sha256": "1db2bf26a7cbde2b58bdda5cf907ac1ed8eefefff5370c7def0e7f57987ca875"
   }
 }
