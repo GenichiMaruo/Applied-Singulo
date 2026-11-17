@@ -1,3 +1,9 @@
+# 0.1.1 Beta (unreleased compatibility work)
+
+- Prepare Minecraft 1.21.1 NeoForge compatibility with Singulo 0.20.0.
+- Require Singulo [0.20.0,0.21.0); public dependency pin and final verification are pending.
+- No new machine-processing or chunk-loading support is implied.
+
 # Changelog
 
 ## 0.1.0 (Beta, unreleased)

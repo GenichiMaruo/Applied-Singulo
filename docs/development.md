@@ -27,3 +27,7 @@ preparing a CI receipt. This does not authorize publishing Applied Singulo itsel
   source and the current GitHub Actions commit. Use only a fresh CI build -> tests -> manifest artifact,
   never an old local JAR relabelled with a new commit.
 - Metadata requires `[0.19.0,0.20.0)`. No Applied CF/Modrinth publication or merge is authorized here.
+
+## Singulo 0.20.0 compatibility preparation
+
+The fix/singulo-020-compat-1211 branch prepares Applied Singulo 0.1.1 Beta for Minecraft 1.21.1 NeoForge and Singulo [0.20.0,0.21.0). The dependency is temporarily pinned to reviewed PR #79 source, not a published release. This branch must not be published until the final Singulo commit has passed compatibility tests, the official dependency URL and SHA-256 are pinned, and fresh CI produces a release receipt. The owner's API-key preparation is a separate publication hold. Earlier 0.19.0 notes above describe the previous release.
