@@ -1,10 +1,4 @@
 {
-  "Singulo-0.19.0-26.1.2N.jar": {
-    "property": "singuloJar",
-    "url": "https://edge.forgecdn.net/files/9627/445/Singulo-0.19.0-26.1.2N.jar",
-    "sha256": "891f6d67453bc7bbb55db6003464e0fbbc629f2b6a944192e4657cf95df51f1b",
-    "note": "Official CI 43703005408 artifact; CurseForge file 9627445 approved and generally public. CDN SHA-256 verified."
-  },
   "appliedenergistics2-26.1.13-beta.jar": {
     "url": "https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/v26.1.13-beta/appliedenergistics2-26.1.13-beta.jar",
     "sha256": "6474119c645a21f509da518845ab42bff84d496f80a86ce5e551d7a4745b4893",
@@ -14,5 +8,10 @@
     "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v26.1.14-beta/guideme-26.1.14-beta.jar",
     "sha256": "28887ce18eddd4107722899248ae36cea31fba4696522563703ecf093a42b4a3",
     "property": "guideMeJar"
+  },
+  "Singulo-0.20.0-26.1.2N.jar": {
+    "property": "singuloJar",
+    "url": "https://edge.forgecdn.net/files/9660/509/Singulo-0.20.0-26.1.2N.jar",
+    "sha256": "064dc255b7d964bbeb63524a65c7d4d911fd7541324e463ae3d69452685a766b"
   }
 }

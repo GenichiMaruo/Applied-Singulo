@@ -676,8 +676,15 @@ public final class MeInterfaceGameTests {
                 && !me.mainNode().getGrid().getCraftingService().getCraftables(k -> k.equals(fence)).isEmpty(),
                 "Interface, patterns and crafting CPU online"))
             .thenExecute(() -> {
+                // Exercise the stale-snapshot regression before adding materials.
+                me.mainNode().getGrid().getStorageService().getCachedInventory();
                 me.mainNode().getGrid().getStorageService().getInventory().insert(log, 64,
                     appeng.api.config.Actionable.MODULATE, appeng.api.networking.security.IActionSource.empty());
+            })
+            .thenWaitUntil(() -> h.assertTrue(
+                me.mainNode().getGrid().getStorageService().getCachedInventory().get(log) == 64,
+                "Crafting snapshot contains the inserted logs"))
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 24,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
