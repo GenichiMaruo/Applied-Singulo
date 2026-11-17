@@ -83,6 +83,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/verified_release.py promote --repo "$GITHUB_REPOSITORY" --run "$VERIFIED_RUN_ID" --tag "$RELEASE_TAG" --source release-source
+      - name: Verify configured destination without exposing its value
+        env:
+          CONFIGURED_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID || vars.CURSEFORGE_PROJECT_ID }}
+        shell: bash
+        run: test "$CONFIGURED_PROJECT_ID" = '1806522'
       - name: Acquire permanent shared CurseForge upload lock
         env:
           GH_TOKEN: ${{ github.token }}
