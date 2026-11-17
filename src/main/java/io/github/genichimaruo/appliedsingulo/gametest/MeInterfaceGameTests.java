@@ -310,6 +310,10 @@ public final class MeInterfaceGameTests {
         android.moveTo(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(2, 1, 2))));
         android.setNoAi(!moving);
         level.addFreshEntity(android);
+        if (moving) h.onEachTick(() -> h.assertTrue(android.isAlive(),
+            "Workshop worker died at " + android.position() + " from " + android.getLastDamageSource()
+                + "; block=" + level.getBlockState(android.blockPosition())
+                + "; below=" + level.getBlockState(android.blockPosition().below())));
         // Finished workshops must not leave roaming physical obstacles in neighboring tests.
         LegacyTestPlayers.onFinish(h, android::discard);
         return console;

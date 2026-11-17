@@ -162,6 +162,28 @@ legacyForge {
 tasks.matching { it.name in ['runClient', 'runServer', 'runGameTestServer'] }.configureEach { dependsOn fetchDependencies }
 tasks.named('compileJava') { dependsOn fetchDependencies }
 
+// Legacy Forge launches through dedicated-server world generation, not vanilla's flat GameTest factory.
+// Every invocation uses a new deterministic, test-only world; preserve prior worlds as diagnostic evidence.
+def gameTestDirectory = layout.buildDirectory.dir('gametest')
+def prepareGameTestWorld = tasks.register('prepareGameTestWorld') {
+    outputs.upToDateWhen { false }
+    doLast {
+        def directory = gameTestDirectory.get().asFile
+        directory.mkdirs()
+        def worldName = 'applied-singulo-flat-' + java.util.UUID.randomUUID().toString()
+        new File(directory, 'server.properties').setText("""# Generated only for Applied Singulo GameTests.
+level-name=${worldName}
+level-seed=1
+level-type=minecraft:flat
+generate-structures=false
+generator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains","lakes":false,"features":false,"structure_overrides":[]}
+""", 'UTF-8')
+        logger.lifecycle("Prepared deterministic flat GameTest world ${worldName}")
+    }
+}
+tasks.named('runGameTestServer') { dependsOn prepareGameTestWorld }
+
+
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def values = [minecraft_version_range: minecraft_version_range, forge_version: selectedLoaderVersion,
         loader_version_range: loader_version_range, mod_id: mod_id, mod_name: mod_name,
