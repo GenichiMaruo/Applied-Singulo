@@ -13,10 +13,10 @@ on:
         required: true
         type: string
       release_type:
-        description: 'auto: Beta for 0.x; Release for stable versions 1.0.0 and later'
+        description: 'This verified release is Beta only'
         type: choice
-        options: [auto, beta, release, alpha]
-        default: auto
+        options: [beta]
+        default: beta
 
 permissions:
   contents: read
@@ -64,7 +64,7 @@ jobs:
           if [[ "$type" == auto ]]; then
             if [[ "$version" =~ ^([0-9]+)\.[0-9]+\.[0-9]+$ ]] && (( BASH_REMATCH[1] >= 1 )); then type=release; else type=beta; fi
           fi
-          [[ "$type" == beta || "$type" == release || "$type" == alpha ]] || exit 1
+          [[ "$type" == beta ]] || exit 1
           echo "type=$type" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "neo_name=Applied-Singulo-$version-${minecraft}N" >> "$GITHUB_OUTPUT"

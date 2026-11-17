@@ -44,4 +44,41 @@ class ProvenanceTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'digest mismatch'):
                 vr.promote({'artifact':self.art},self.source)
 
+class PromotionTests(unittest.TestCase):
+    def fixture(self, root, mutate=None):
+        import hashlib, io, zipfile
+        source=root/'source'; source.mkdir()
+        (source/'tools').mkdir()
+        (source/'gradle.properties').write_text('singulo_version_range=[0.20.0,0.21.0)\n')
+        pins={'Singulo.jar':{'url':'https://example.invalid/singulo.jar','sha256':'a'*64}}
+        (source/'tools/dependencies.json').write_text(json.dumps(pins))
+        name='Applied-Singulo-0.1.1-1.21.1N.jar'
+        toml='[[mods]]\nmodId="applied_singulo"\nversion="0.1.1"\n[[dependencies.applied_singulo]]\nmodId="singulo"\nversionRange="[0.20.0,0.21.0)"\n[[dependencies.applied_singulo]]\nmodId="minecraft"\nversionRange="[1.21.1]"\n'
+        if mutate=='metadata': toml=toml.replace('version="0.1.1"','version="9.0.0"')
+        buf=io.BytesIO()
+        with zipfile.ZipFile(buf,'w') as z: z.writestr('META-INF/neoforge.mods.toml',toml)
+        jar=buf.getvalue(); log=b'45 GAME TESTS COMPLETE\nAll 45 required tests passed\n'
+        if mutate=='log': log=b'0 GAME TESTS COMPLETE'
+        receipt={'filename':name,'git_commit':'a'*40,'ci_run_id':'5','published':False,'release_type':'beta','sha256':hashlib.sha256(jar).hexdigest(),'sha512':hashlib.sha512(jar).hexdigest(),'gametest_log_sha256':hashlib.sha256(log).hexdigest(),'dependencies':pins}
+        if mutate=='commit': receipt['git_commit']='c'*40
+        if mutate=='dependencies': receipt['dependencies']={}
+        buf=io.BytesIO()
+        with zipfile.ZipFile(buf,'w') as z:
+            z.writestr('release-manifest.json',json.dumps(receipt)); z.writestr('libs/'+name,jar); z.writestr('integration-gametest.log',log)
+        archive=buf.getvalue(); metadata={'artifact':{'id':9,'digest':'sha256:'+hashlib.sha256(archive).hexdigest()},'version':'0.1.1','commit':'a'*40,'run_id':5}
+        return source,metadata,archive,name
+    def run_fixture(self, mutate=None):
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); source,metadata,archive,name=self.fixture(root,mutate); old=Path.cwd()
+            try:
+                os.chdir(root)
+                with patch.object(vr.subprocess,'check_output',return_value=archive): vr.promote(metadata,source)
+                self.assertTrue((root/'release-artifacts'/name).is_file())
+            finally: os.chdir(old)
+    def test_exact_archive_promotes(self): self.run_fixture()
+    def test_receipt_or_payload_mutations_rejected(self):
+        for mutation in ('commit','dependencies','log','metadata'):
+            with self.subTest(mutation=mutation),self.assertRaises(RuntimeError): self.run_fixture(mutation)
+
 if __name__=='__main__': unittest.main()

@@ -537,6 +537,16 @@ public final class MeInterfaceGameTests {
                 "Interface online with its patterns registered in AE2"))
             .thenExecute(() -> {
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 simulations read its end-of-tick cached inventory, not live storage.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 0
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 0,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -551,6 +561,16 @@ public final class MeInterfaceGameTests {
                     appeng.api.networking.security.IActionSource.empty());
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS), 16L,
                     appeng.api.stacks.AEItemKey.of(Items.STICK), 8L));
+            })
+            // AE2 simulations read its end-of-tick cached inventory, not live storage.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 0
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })
@@ -561,7 +581,19 @@ public final class MeInterfaceGameTests {
                 h.assertTrue(!p.patternTimes().isEmpty() && p.patternTimes().keySet().stream().noneMatch(isChain),
                     "Without logs, AE2 must fall back to the single-step fence pattern: " + p.patternTimes());
                 // As in the reported world: logs AND intermediates stored. The chain has the higher priority.
+                // Materialize the old cache before mutation to exercise the end-of-tick synchronization.
+                me.mainNode().getGrid().getStorageService().getCachedInventory();
                 store.accept(java.util.Map.of(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG), 64L));
+            })
+            // AE2 simulations read its end-of-tick cached inventory, not live storage.
+            .thenWaitUntil(() -> {
+                var cached = me.mainNode().getGrid().getStorageService().getCachedInventory();
+                h.assertTrue(cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_LOG)) == 64
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.OAK_PLANKS)) == 16
+                    && cached.get(appeng.api.stacks.AEItemKey.of(Items.STICK)) == 8,
+                    "AE2 cached stock reflects the current test phase");
+            })
+            .thenExecute(() -> {
                 calc[0] = me.mainNode().getGrid().getCraftingService().beginCraftingCalculation(h.getLevel(), requester, fence, 12,
                     appeng.api.networking.crafting.CalculationStrategy.REPORT_MISSING_ITEMS);
             })

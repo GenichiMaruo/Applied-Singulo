@@ -15,7 +15,7 @@ REPO = 'GenichiMaruo/Applied-Singulo'
 PROTOCOL = 1
 PREFIX = 'refs/tags/applied-singulo-cf-upload-lock-v1/'
 WORKFLOW_DIGESTS = {
-    '1.21.1': '709dee2bd0b5be371a3263adc006e531b6d57248f4b4278226b7aa037457426a',
+    '1.21.1': '3c82550f6e9e1f75f8e4c9ccd7ac072f75bbbb9480ec008b811ea7ab16103cc6',
     '1.20.1': '4c6990fa1579c7050a7a14043b5ae547d59672ad72228bfd5d02d3ebcb1009e7',
 }
 WORKFLOW_COMMAND = 'python3 tools/curseforge_guard.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --commit "$(git -C release-source rev-parse HEAD)" --run-id "$GITHUB_RUN_ID" --receipt cf-lock-receipt.json'
