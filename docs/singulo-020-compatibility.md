@@ -1,6 +1,6 @@
 # Singulo 0.20.0 compatibility preparation (1.20.1)
 
-Applied Singulo 0.1.1 Beta requires Singulo [0.20.0,0.21.0). Current source pin 223c755702e1b1a4bacc634cd173b877e404d969 is a provisional port candidate, not the final release dependency.
+Applied Singulo 0.1.1 Beta requires Singulo [0.20.0,0.21.0). NeoForge is pinned to approved public CurseForge file 9660556 (final merge f05ed56af936e1285708ee6ef9f3b67fbb81eef2); Forge remains on provisional source pin 223c755702e1b1a4bacc634cd173b877e404d969 pending general publication of the final Forge release.
 
 Keep existing AE2 and GuideME pins. No merge or publication until the final core port SHA is reviewed, published dependency URLs and hashes are fixed, all build/distribution/GameTests pass in fresh CI, and independent review completes. The 1.21.1-only publishing workflow must not be used for this target.
 

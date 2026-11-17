@@ -19,10 +19,8 @@
   },
   "Singulo-0.20.0-1.20.1N.jar": {
     "property": "singuloJar",
-    "repository": "https://github.com/GenichiMaruo/Singulo.git",
-    "commit": "223c755702e1b1a4bacc634cd173b877e404d969",
-    "unreleased": true,
-    "note": "Provisional port candidate only. Final core review, public artifact pins and fresh CI required before merge/publication.",
-    "loader": "neoforge"
+    "loader": "neoforge",
+    "url": "https://edge.forgecdn.net/files/9660/556/Singulo-0.20.0-1.20.1N.jar",
+    "sha256": "9b668c11fb4556a8553cd1b0e4b987a6b31dc139e5f771a5821c5eb2114161cf"
   }
 }
