@@ -2,7 +2,7 @@
 
 This branch publishes `Applied-Singulo-<version>-26.1.2N.jar` as **Beta**, for NeoForge and Java 25, to Applied Singulo (project 1806522). Never reuse a 1.21.1 or 1.20.1 artifact or tag.
 
-1. Review and merge the release PR into `26.1.2`. Wait for the **first-attempt successful push Build** on that exact maintained-branch commit, including all 48 GameTests and production-JAR validation. PR runs and feature-branch runs cannot be promoted.
+1. Review and merge the release PR into `26.1.2`. Wait for the **first-attempt successful push Build** on that exact maintained-branch commit, including all 50 GameTests and production-JAR validation. PR runs and feature-branch runs cannot be promoted.
 2. Verify every dependency is generally public, pinned by HTTPS URL and SHA-256 in `tools/dependencies.json`, and the CI artifact includes its `release-manifest.json`. Pending markers stop promotion.
 3. Create immutable `v<version>-26.1.2N` on that exact commit. Never move an existing tag. Check existing CurseForge files, GitHub releases (including drafts), and permanent upload-lock refs before starting.
 4. Dispatch **Publish CurseForge** from `26.1.2` with that Build `verified_run_id`, the `release_tag`, and `release_type=beta`. The `curseforge` environment provides `CURSEFORGE_TOKEN` and `CURSEFORGE_PROJECT_ID` (must equal 1806522). Never print credentials.
