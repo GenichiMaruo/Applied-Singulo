@@ -1053,4 +1053,39 @@ public final class MeInterfaceGameTests {
             });
         });
     }
+    /** Actual AE2 fluid inputs travel through a private order; no fake bucket is returned. */
+    @GameTest(template = "empty", timeoutTicks = 2400)
+    public static void fluidCraftingUsesPrivateCustodyAndReturnsNoSyntheticBucket(GameTestHelper h) {
+        var console = workshop(h, true);
+        var me = remoteInterface(h, console);
+        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        for (int i = 1; i < RecipeRackBlockEntity.COLS; i++) rack.items().setStackInSlot(i, ItemStack.EMPTY);
+        var recipe = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
+        recipe.set(7, new ItemStack(Items.LAVA_BUCKET));
+        recipe.set(8, new ItemStack(Items.OBSIDIAN));
+        rack.items().setStackInSlot(1, recipeCard(h, recipe, new ItemStack(Items.CRYING_OBSIDIAN)));
+        var workers = h.getLevel().getEntitiesOfClass(RuinAndroid.class, new AABB(h.absolutePos(BlockPos.ZERO)).inflate(16));
+        for (var worker : workers) if (console.owner().equals(worker.owner()))
+            worker.inventory().setItem(RuinAndroid.SLOT_TANK, new ItemStack(singulo("android_tank_upgrade")));
+        var lava = appeng.api.stacks.AEFluidKey.of(net.minecraft.world.level.material.Fluids.LAVA);
+        var counter = new appeng.api.stacks.KeyCounter();
+        counter.add(lava, 2000);
+        counter.add(appeng.api.stacks.AEItemKey.of(Items.OBSIDIAN), 2);
+        var materials = io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceLogic.materials(
+            new appeng.api.stacks.KeyCounter[] {counter});
+        h.startSequence().thenWaitUntil(() -> {
+            h.assertTrue(me.patterns().stream().filter(p -> p.output().is(Items.CRYING_OBSIDIAN)).anyMatch(p ->
+                java.util.Arrays.stream(p.getInputs()).anyMatch(input -> input.isValid(lava, h.getLevel())
+                    && input.getMultiplier() == 1000)), "AE2 receives the validated 1000 mB bucket alternative");
+        }).thenExecute(() -> {
+            h.assertTrue(me.queue().accept(new ItemStack(Items.CRYING_OBSIDIAN), 2, materials,
+                console.getBlockPos(), h.getLevel().getGameTime()), "Queue actual AE2 inputs");
+        }).thenWaitUntil(() -> {
+            h.assertTrue(me.queue().jobs().isEmpty(), "Fluid crafting still pending: " + me.queue().jobs());
+            h.assertTrue(count(me.queue().outputContents(), Items.CRYING_OBSIDIAN) == 2, "Both products claimed");
+            h.assertTrue(count(me.queue().outputContents(), Items.BUCKET) == 0, "Tank crafting creates no buckets");
+            h.assertTrue(((ChestBlockEntity)h.getBlockEntity(CHEST)).countItem(Items.OAK_LOG) == 32,
+                "Unrelated shared stock stays untouched");
+        }).thenSucceed();
+    }
 }
