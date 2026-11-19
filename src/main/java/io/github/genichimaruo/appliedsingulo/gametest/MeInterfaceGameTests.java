@@ -1027,6 +1027,7 @@ public final class MeInterfaceGameTests {
     public static void fluidCraftingUsesPrivateCustodyAndReturnsNoSyntheticBucket(GameTestHelper h) {
         var console = workshop(h, true);
         var me = remoteInterface(h, console);
+        h.setBlock(REMOTE_ME.above(), appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
         RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
         for (int i = 1; i < RecipeRackBlockEntity.COLS; i++) rack.items().setStackInSlot(i, ItemStack.EMPTY);
         var recipe = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
@@ -1038,17 +1039,21 @@ public final class MeInterfaceGameTests {
             worker.inventory().setItem(RuinAndroid.SLOT_TANK, new ItemStack(singulo("android_tank_upgrade")));
         var lava = appeng.api.stacks.AEFluidKey.of(net.minecraft.world.level.material.Fluids.LAVA);
         var counter = new appeng.api.stacks.KeyCounter();
-        counter.add(lava, 2000);
-        counter.add(appeng.api.stacks.AEItemKey.of(Items.OBSIDIAN), 2);
-        var materials = io.github.genichimaruo.appliedsingulo.me.AndroidInterfaceLogic.materials(
-            new appeng.api.stacks.KeyCounter[] {counter});
+        counter.add(lava, 1000);
+        counter.add(appeng.api.stacks.AEItemKey.of(Items.OBSIDIAN), 1);
         h.startSequence().thenWaitUntil(() -> {
+            h.assertTrue(me.mainNode().isActive(), "ME crafting provider online");
             h.assertTrue(me.patterns().stream().filter(p -> p.output().is(Items.CRYING_OBSIDIAN)).anyMatch(p ->
                 java.util.Arrays.stream(p.getInputs()).anyMatch(input -> input.isValid(lava, h.getLevel())
                     && input.getMultiplier() == 1000)), "AE2 receives the validated 1000 mB bucket alternative");
         }).thenExecute(() -> {
-            h.assertTrue(me.queue().accept(new ItemStack(Items.CRYING_OBSIDIAN), 2, materials,
-                console.getBlockPos(), h.getLevel().getGameTime()), "Queue actual AE2 inputs");
+            var pattern = me.patterns().stream().filter(p -> p.output().is(Items.CRYING_OBSIDIAN)
+                && java.util.Arrays.stream(p.getInputs()).anyMatch(input -> input.isValid(lava, h.getLevel())))
+                .findFirst().orElseThrow();
+            for (int push = 0; push < 2; push++) h.assertTrue(me.logic().push(pattern,
+                new appeng.api.stacks.KeyCounter[] {counter}), "Accept AE2 fluid pattern push " + push);
+            h.assertTrue(me.queue().jobs().size() == 1 && me.queue().jobs().getFirst().count() == 2,
+                "Two fluid pushes batch without sharing custody");
         }).thenWaitUntil(() -> {
             h.assertTrue(me.queue().jobs().isEmpty(), "Fluid crafting still pending: " + me.queue().jobs());
             h.assertTrue(count(me.queue().outputContents(), Items.CRYING_OBSIDIAN) == 2, "Both products claimed");
