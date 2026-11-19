@@ -1,3 +1,11 @@
+# Applied Singulo 0.2.0 (development)
+
+Targets Singulo **0.21.x**. Ordinary crafting recipes that safely consume a source-fluid bucket can also be supplied from AE2 fluid storage, using Singulo's validated fluid-recipe API. Equip the android with a tank upgrade. Each push retains private material custody; unused fluid returns to ME, including cancellation/reload recovery. Original filled-bucket patterns remain supported.
+
+Machine/procedure recipes and liquid main products are not advertised: these require shared workshop execution, which does not provide this addon's per-request custody guarantee. Fuel, catalysts, reusable tools and chemicals are also excluded. No new chunk-loading behavior is introduced.
+
+All Minecraft/loader variants must pass verification before publication. Public Singulo dependency pins and release receipts are pending. Older release history follows.
+
 # Applied Singulo 0.1.1 compatibility branch
 
 This branch targets Applied Singulo 0.1.1 Beta for Minecraft 1.21.1 NeoForge and the generally public Singulo 0.20.0 release. Final release readiness requires fresh CI, review and promotion of the verified artifact. The 0.1.0 / 0.19.x text below documents the previous release, not the current branch dependency.

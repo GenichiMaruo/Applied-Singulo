@@ -1,3 +1,11 @@
+# 0.2.0 Beta (unreleased)
+
+- Require Singulo 0.21.x and use its public workshop discovery and location-card API.
+- Export validated fluid-input alternatives for ordinary bucket-consuming crafting recipes via AndroidOrders.fluidCraftingRecipes. Original bucket-item patterns remain available.
+- Keep AE2 inputs in per-request escrow. Fluids use mB throughout batching, cancellation, persistence and ME return; virtual buckets are never refunded as real items.
+- Do not advertise machine/procedure recipes, reusable tools, fuel, catalysts, chemicals or liquid main products: shared workshop execution is not private AE2 custody.
+- Public dependency pins and final release verification are pending; this development build is not publishable.
+
 # 0.1.1 Beta (unreleased compatibility work)
 
 - Prepare Minecraft 1.21.1 NeoForge compatibility with Singulo 0.20.0.

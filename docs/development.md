@@ -37,3 +37,16 @@ Applied Singulo 0.1.1 Beta targets Minecraft 1.21.1 NeoForge and Singulo [0.20.0
 Run Publish CurseForge manually on 1.21.1 after review and merge. Supply a successful first-attempt maintained-branch Build run and immutable v<mod_version> tag at that exact commit. Complete artifact ZIP digest, manifest, JAR and log hashes are checked before promotion. No rebuild occurs. Public dependency pins are mandatory. Use only configured curseforge Environment secrets.
 
 The permanent create-only upload-lock tag precedes the asset-free draft audit release and single upload attempt. Never delete/adopt the lock or automatically retry failed/uncertain submissions. Inspect CurseForge first. Keep lock tags and maintained branches during cleanup. Submission is not moderation approval; verify the file separately.
+
+
+## 0.2.0 fluid crafting
+
+Use only the public AndroidWorkshops discovery/card API and AndroidOrders.fluidCraftingRecipes.
+The latter validates actual crafting remainders before replacing bucket inputs with fluid mB.
+Do not infer fluid equivalence from item appearance or swap arbitrary fluid containers.
+Original and fluid patterns are exported; private AndroidEscrows custody remains mandatory.
+Processing, liquid main products, tools, fuel, catalysts and chemicals remain unsupported.
+The added test recipe lives under data/applied_singulo_test and is excluded from production JARs.
+Run all existing GameTests plus fluidCraftingUsesPrivateCustodyAndReturnsNoSyntheticBucket.
+Never promote local override builds: pin the final approved public 0.21.0 core artifact first,
+then rerun build, all GameTests, distribution checks and release receipt preparation.
