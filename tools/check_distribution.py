@@ -12,6 +12,7 @@ with zipfile.ZipFile(root / "build/libs" / name) as z:
     assert z.read("applied-singulo.png") == (root / "src/main/resources/applied-singulo.png").read_bytes()
     assert not any("/gametest/" in n for n in names)
     assert "data/applied_singulo/structure/empty.nbt" not in names
+    assert not any(n.startswith("data/applied_singulo_test/") for n in names)
     assert "io/github/genichimaruo/appliedsingulo/AppliedSingulo.class" in names
     m = tomllib.loads(z.read("META-INF/neoforge.mods.toml").decode())
     assert m["mods"][0]["logoFile"] == "applied-singulo.png"

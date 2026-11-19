@@ -9,9 +9,9 @@
     "sha256": "28887ce18eddd4107722899248ae36cea31fba4696522563703ecf093a42b4a3",
     "property": "guideMeJar"
   },
-  "Singulo-0.20.0-26.1.2N.jar": {
+  "Singulo-0.21.0-26.1.2N.jar": {
     "property": "singuloJar",
-    "url": "https://edge.forgecdn.net/files/9660/509/Singulo-0.20.0-26.1.2N.jar",
-    "sha256": "064dc255b7d964bbeb63524a65c7d4d911fd7541324e463ae3d69452685a766b"
+    "pending": true,
+    "unreleased": true
   }
 }
