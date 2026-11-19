@@ -50,3 +50,8 @@ The added test recipe lives under data/applied_singulo_test and is excluded from
 Run all existing GameTests plus fluidCraftingUsesPrivateCustodyAndReturnsNoSyntheticBucket.
 Never promote local override builds: pin the final approved public 0.21.0 core artifact first,
 then rerun build, all GameTests, distribution checks and release receipt preparation.
+
+Recipe selection: Singulo's planner selects the first loaded card for each output identity.
+The new fluid variant API follows that order. Do not rely on later cards with the same output
+and different ingredients as independently selectable escrow recipes; the existing order API
+selects an output, not a recipe ID. One intended recipe per output avoids this ambiguity.
