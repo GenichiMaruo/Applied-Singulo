@@ -1028,7 +1028,7 @@ public final class MeInterfaceGameTests {
         var console = workshop(h, true);
         var me = remoteInterface(h, console);
         h.setBlock(REMOTE_ME.above(), appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        RecipeRackBlockEntity rack = h.getBlockEntity(RACK, RecipeRackBlockEntity.class);
         for (int i = 1; i < RecipeRackBlockEntity.COLS; i++) rack.items().setStackInSlot(i, ItemStack.EMPTY);
         var recipe = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
         recipe.set(7, new ItemStack(Items.LAVA_BUCKET));
@@ -1058,7 +1058,7 @@ public final class MeInterfaceGameTests {
             h.assertTrue(me.queue().jobs().isEmpty(), "Fluid crafting still pending: " + me.queue().jobs());
             h.assertTrue(count(me.queue().outputContents(), Items.CRYING_OBSIDIAN) == 2, "Both products claimed");
             h.assertTrue(count(me.queue().outputContents(), Items.BUCKET) == 0, "Tank crafting creates no buckets");
-            h.assertTrue(((ChestBlockEntity)h.getBlockEntity(CHEST)).countItem(Items.OAK_LOG) == 32,
+            h.assertTrue(h.getBlockEntity(CHEST, ChestBlockEntity.class).countItem(Items.OAK_LOG) == 32,
                 "Unrelated shared stock stays untouched");
         }).thenSucceed();
     }
