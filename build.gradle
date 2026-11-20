@@ -11,6 +11,7 @@ tasks.named('jar', Jar) {
     from('LICENSE')
     exclude 'io/github/genichimaruo/appliedsingulo/gametest/**'
     exclude 'data/applied_singulo/structure/empty.nbt'
+    exclude 'data/applied_singulo_test/**'
 }
 
 // Development dependencies only; never bundled into the addon.

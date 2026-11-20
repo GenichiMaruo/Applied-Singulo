@@ -95,4 +95,21 @@ public final class PatternIdentityGameTests {
             AndroidRecipePattern.of(recipes.get(1), h.getLevel().registryAccess())), "Final full-key definitions remain distinct");
         h.succeed();
     }
+
+    @GameTest(template = "empty")
+    public static void reusableToolsAndLiquidMainProductsRemainExcluded(GameTestHelper h) {
+        var tool = new io.github.genichimaruo.singulo.api.android.AndroidRecipe.Material(
+            new ItemStack(Items.SHEARS), 1, List.of(), "", false, false, false, 1, 0);
+        var product = new io.github.genichimaruo.singulo.api.android.AndroidRecipe.Product(new ItemStack(Items.STONE), 1, false);
+        var r = new io.github.genichimaruo.singulo.api.android.AndroidRecipe("crafting", net.minecraft.core.BlockPos.ZERO,
+            List.of(product), List.of(tool), false);
+        h.assertTrue(SinguloLinks.convert(r) == null, "Reusable tool consumption cannot be represented by private material escrow");
+        var liquid = new io.github.genichimaruo.singulo.api.android.AndroidRecipe.Product(
+            AndroidEscrows.fluidSample(new FluidStack(Fluids.WATER, 1)), 1000, true);
+        r = new io.github.genichimaruo.singulo.api.android.AndroidRecipe("crafting", net.minecraft.core.BlockPos.ZERO,
+            List.of(liquid), List.of(new io.github.genichimaruo.singulo.api.android.AndroidRecipe.Material(
+                new ItemStack(Items.STONE), 1, List.of(), "", false, false, false)), false);
+        h.assertTrue(SinguloLinks.convert(r) == null, "Liquid main products must not be promised by unsupported escrow");
+        h.succeed();
+    }
 }

@@ -1,6 +1,6 @@
 package io.github.genichimaruo.appliedsingulo.order;
 
-import io.github.genichimaruo.singulo.android.work.WorkLocationCardItem;
+import io.github.genichimaruo.singulo.api.android.AndroidWorkshops;
 import io.github.genichimaruo.singulo.api.android.AndroidOrders;
 import io.github.genichimaruo.singulo.api.android.AndroidRecipe;
 import java.util.ArrayList;
@@ -13,11 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/**
- * Adapter over Singulo's public Android API (0.19.0: AndroidOrders, AndroidEscrows, AndroidRecipe).
- * The Work Location Card helpers are the only Singulo internals read, so a device can be pointed at a console
- * by clicking it with a card that recorded that console.
- */
+/** Adapter over Singulo 0.21.0's public Android workshop APIs. */
 public final class SinguloLinks {
     private SinguloLinks() { }
 
@@ -48,23 +44,19 @@ public final class SinguloLinks {
      * the only neighbours the ME interface shows its network's storage to.
      */
     public static boolean ownedWorkBlock(ServerLevel level, BlockPos pos, UUID owner) {
-        if (!level.isLoaded(pos)) return false;
-        var be = level.getBlockEntity(pos);
-        BlockPos console;
-        if (be instanceof io.github.genichimaruo.singulo.android.work.SupplyPortBlockEntity port) console = port.console();
-        else if (be instanceof io.github.genichimaruo.singulo.android.work.WorkConsoleBlockEntity) console = pos;
-        else return false;
-        return console != null && level.isLoaded(console)
-            && AndroidOrders.snapshot(level, console, owner).state() == AndroidOrders.SnapshotState.AVAILABLE;
+        return AndroidWorkshops.resolve(level, pos, owner).map(connection ->
+            connection.role() == AndroidWorkshops.Role.CONSOLE || connection.role() == AndroidWorkshops.Role.SUPPLY)
+            .orElse(false);
     }
 
-    public static boolean isLocationCard(ItemStack stack) { return WorkLocationCardItem.isCard(stack); }
+    public static boolean isLocationCard(ItemStack stack) { return AndroidWorkshops.isLocationCard(stack); }
 
-    /** The console recorded on a Work Location Card, or null (empty card or another dimension). */
+    /** Reading a card identifies a location; ownership is checked separately before use. */
     @Nullable
     public static BlockPos cardTarget(ItemStack card, Level level) {
-        return WorkLocationCardItem.isCard(card) && WorkLocationCardItem.sameDimension(card, level)
-            ? WorkLocationCardItem.pos(card) : null;
+        return AndroidWorkshops.readLocationCard(card)
+            .filter(location -> location.dimension().equals(level.dimension()))
+            .map(net.minecraft.core.GlobalPos::pos).orElse(null);
     }
 
     // ------------------------------------------------------------------ recipes
@@ -88,7 +80,10 @@ public final class SinguloLinks {
     public static List<PatternRecipe> recipes(ServerLevel level, BlockPos console, UUID owner) {
         var snapshot = AndroidOrders.recipes(level, console, owner);
         if (snapshot.state() != AndroidOrders.SnapshotState.AVAILABLE) return List.of();
-        return patternRecipes(snapshot.recipes());
+        var recipes = new ArrayList<>(snapshot.recipes());
+        var fluids = AndroidOrders.fluidCraftingRecipes(level, console, owner);
+        if (fluids.state() == AndroidOrders.SnapshotState.AVAILABLE) recipes.addAll(fluids.recipes());
+        return patternRecipes(recipes);
     }
 
     /**
@@ -208,7 +203,8 @@ public final class SinguloLinks {
         if (recipe.outputs().getFirst().liquid()) return false;   // AE2 asks for the main product; it must be an item
         for (var p : recipe.outputs()) if (p.liquid() && !isFluid(p.sample())) return false;   // no chemicals
         for (var m : recipe.materials())
-            if (m.fuel() || m.catalyst() || m.liquid() && !isFluid(m.sample())) return false;
+            if (m.fuel() || m.catalyst() || m.toolUsesPerCraft() > 0 || m.minimumCatalystTier() > 0
+                    || m.liquid() && !isFluid(m.sample())) return false;
         return true;
     }
 
