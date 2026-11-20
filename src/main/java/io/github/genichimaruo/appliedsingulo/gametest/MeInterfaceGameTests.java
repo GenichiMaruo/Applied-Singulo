@@ -1059,7 +1059,7 @@ public final class MeInterfaceGameTests {
         var console = workshop(h, true);
         var me = remoteInterface(h, console);
         h.setBlock(REMOTE_ME.above(), appeng.core.definitions.AEBlocks.CREATIVE_ENERGY_CELL.block());
-        RecipeRackBlockEntity rack = h.getBlockEntity(RACK);
+        var rack = (RecipeRackBlockEntity) h.getBlockEntity(RACK);
         for (int i = 1; i < RecipeRackBlockEntity.COLS; i++) rack.items().setStackInSlot(i, ItemStack.EMPTY);
         var recipe = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
         recipe.set(7, new ItemStack(Items.LAVA_BUCKET));
@@ -1083,7 +1083,7 @@ public final class MeInterfaceGameTests {
                 .findFirst().orElseThrow();
             for (int push = 0; push < 2; push++) h.assertTrue(me.logic().push(pattern,
                 new appeng.api.stacks.KeyCounter[] {counter}), "Accept AE2 fluid pattern push " + push);
-            h.assertTrue(me.queue().jobs().size() == 1 && me.queue().jobs().getFirst().count() == 2,
+            h.assertTrue(me.queue().jobs().size() == 1 && me.queue().jobs().get(0).count() == 2,
                 "Two fluid pushes batch without sharing custody");
         }).thenWaitUntil(() -> {
             h.assertTrue(me.queue().jobs().isEmpty(), "Fluid crafting still pending: " + me.queue().jobs());
