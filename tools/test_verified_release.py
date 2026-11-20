@@ -57,7 +57,7 @@ class PromotionTests(unittest.TestCase):
         if mutate=='metadata': toml=toml.replace('version="0.1.1"','version="9.0.0"')
         buf=io.BytesIO()
         with zipfile.ZipFile(buf,'w') as z: z.writestr('META-INF/neoforge.mods.toml',toml)
-        jar=buf.getvalue(); log=b'45 GAME TESTS COMPLETE\nAll 45 required tests passed\n'
+        jar=buf.getvalue(); log=b'47 GAME TESTS COMPLETE\nAll 47 required tests passed\n'
         if mutate=='log': log=b'0 GAME TESTS COMPLETE'
         receipt={'filename':name,'git_commit':'a'*40,'ci_run_id':'5','published':False,'release_type':'beta','sha256':hashlib.sha256(jar).hexdigest(),'sha512':hashlib.sha512(jar).hexdigest(),'gametest_log_sha256':hashlib.sha256(log).hexdigest(),'dependencies':pins}
         if mutate=='commit': receipt['git_commit']='c'*40

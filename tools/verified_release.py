@@ -78,8 +78,8 @@ def promote(metadata, source):
         if hashlib.sha256(jar).hexdigest() != receipt['sha256'] or hashlib.sha512(jar).hexdigest() != receipt['sha512'] or hashlib.sha256(log).hexdigest() != receipt['gametest_log_sha256']:
             raise RuntimeError('Receipt content hash mismatch')
         text = log.decode('utf-8', errors='replace')
-        if '45 GAME TESTS COMPLETE' not in text or 'All 45 required tests passed' not in text:
-            raise RuntimeError('Missing 45-test success')
+        if '47 GAME TESTS COMPLETE' not in text or 'All 47 required tests passed' not in text:
+            raise RuntimeError('Missing 47-test success')
         pins = json.loads((source / 'tools/dependencies.json').read_text())
         expected = {}
         for dep, pin in pins.items():
@@ -100,7 +100,7 @@ def promote(metadata, source):
         (out/name).write_bytes(jar)
         (out/'release-manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
         (out/'provenance.json').write_text(json.dumps(metadata,indent=2)+'\n')
-        print('Verified exact CI artifact, receipt, dependencies and 45 GameTests:', name, receipt['sha256'])
+        print('Verified exact CI artifact, receipt, dependencies and 47 GameTests:', name, receipt['sha256'])
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument('mode',choices=['check','promote']); p.add_argument('--repo',choices=[REPO],required=True); p.add_argument('--run',type=int,required=True); p.add_argument('--tag',required=True); p.add_argument('--source',type=Path,required=True); a=p.parse_args()

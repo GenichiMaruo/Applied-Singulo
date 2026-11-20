@@ -11,6 +11,7 @@ tasks.named('jar', Jar) {
     from('LICENSE')
     exclude 'io/github/genichimaruo/appliedsingulo/gametest/**'
     exclude 'data/applied_singulo/structure/empty.nbt'
+    exclude 'data/applied_singulo_test/**'
 }
 
 // Development dependencies only; never bundled into the addon.
@@ -80,6 +81,8 @@ def fetchDependencies = tasks.register('fetchDependencies') {
         def marker = file("libs/${name}.commit")
         file("libs/${name}").isFile() && marker.isFile() && marker.text.trim() == spec.commit } }
     doLast {
+        def pending = selected.findAll { name, spec -> spec.pending }
+        if (!pending.isEmpty()) throw new GradleException("Awaiting verified public dependency pins: ${pending.keySet()}; local overrides are for development only")
         overrides.each { property, jar ->
             if (!jar.isFile()) throw new GradleException("Missing -P${property}: ${jar}")
             logger.warn("Using unpinned -P${property}=${jar}; not valid for publication checks")

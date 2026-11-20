@@ -11,6 +11,8 @@ root = Path(__file__).resolve().parents[1]
 out = root / "libs"
 out.mkdir(exist_ok=True)
 for name, expected in json.loads((root / "tools/dependencies.json").read_text()).items():
+    if expected.get("pending"):
+        raise SystemExit(f"Awaiting verified public dependency pin: {name}; development overrides cannot be published")
     if "sha256" not in expected:
         print(f"Skipped {name}: unreleased, built by Gradle from commit {expected['commit'][:12]}")
         continue
