@@ -9,16 +9,16 @@
     "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v20.1.7/guideme-20.1.7.jar",
     "sha256": "f01612808bbd8ea469de26c1970fe6dfb71f4a1fb78311155342fd048a137e95"
   },
-  "Singulo-0.20.0-1.20.1F.jar": {
+  "Singulo-0.21.0-1.20.1F.jar": {
     "property": "singuloJar",
     "loader": "forge",
-    "url": "https://edge.forgecdn.net/files/9660/568/Singulo-0.20.0-1.20.1F.jar",
-    "sha256": "d330d57cc02762b5bfb56fbc93d950aa7fb930d3039655c3b3692d5c407df996"
+    "url": "https://edge.forgecdn.net/files/9709/620/Singulo-0.21.0-1.20.1F.jar",
+    "sha256": "0d3217445e430811e8adcfca85bdd2509b31b1eb87ed3b5bf1d74220f99e9aa0"
   },
-  "Singulo-0.20.0-1.20.1N.jar": {
+  "Singulo-0.21.0-1.20.1N.jar": {
     "property": "singuloJar",
     "loader": "neoforge",
-    "url": "https://edge.forgecdn.net/files/9660/556/Singulo-0.20.0-1.20.1N.jar",
-    "sha256": "9b668c11fb4556a8553cd1b0e4b987a6b31dc139e5f771a5821c5eb2114161cf"
+    "url": "https://edge.forgecdn.net/files/9709/627/Singulo-0.21.0-1.20.1N.jar",
+    "sha256": "a67c8e86f5f6d02c64b75356ecb9e3c0da047754bbf533521d22248a6ae88403"
   }
 }

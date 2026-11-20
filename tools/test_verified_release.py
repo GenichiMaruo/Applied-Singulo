@@ -70,7 +70,7 @@ class PromotionTests(unittest.TestCase):
         with zipfile.ZipFile(buf,'w') as z:
             z.writestr('META-INF/mods.toml',toml)
             z.writestr('io/github/genichimaruo/appliedsingulo/AppliedSingulo.class', bytes.fromhex('cafebabe0000')+(65 if mutate=='java' else 61).to_bytes(2,'big'))
-        jar=buf.getvalue(); log=b'48 GAME TESTS COMPLETE\nAll 48 required tests passed\n'
+        jar=buf.getvalue(); log=b'50 GAME TESTS COMPLETE\nAll 50 required tests passed\n'
         if mutate=='log': log=b'0 GAME TESTS COMPLETE'
         receipt={'filename':name,'git_commit':'a'*40,'ci_run_id':'5','published':False,'release_type':'beta','loader':loader,'sha256':hashlib.sha256(jar).hexdigest(),'sha512':hashlib.sha512(jar).hexdigest(),'gametest_log_sha256':hashlib.sha256(log).hexdigest(),'dependencies':pins}
         if mutate=='commit': receipt['git_commit']='c'*40

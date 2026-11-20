@@ -19,6 +19,7 @@ with zipfile.ZipFile(artifact) as z:
     assert 'LICENSE' in names
     assert not any('/gametest/' in n for n in names)
     assert 'data/applied_singulo/structures/empty.nbt' not in names
+    assert not any(n.startswith("data/applied_singulo_test/") for n in names)
     assert 'io/github/genichimaruo/appliedsingulo/AppliedSingulo.class' in names
     m = tomllib.loads(z.read('META-INF/mods.toml').decode())
     assert 'META-INF/neoforge.mods.toml' not in names

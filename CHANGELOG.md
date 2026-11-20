@@ -1,3 +1,8 @@
+# 0.2.0 Beta
+
+- Export Singulo 0.21 liquid-input variants for supported Android workbench recipes, alongside ordinary bucket patterns.
+- Keep materials and refunds in per-request escrow. No machine processing or liquid main products.
+
 # Changelog
 
 ## 0.1.0 (Beta, unreleased)
