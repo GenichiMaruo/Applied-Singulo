@@ -12,8 +12,6 @@
   "Singulo-0.21.0-1.21.1N.jar": {
     "property": "singuloJar",
     "url": "https://edge.forgecdn.net/files/9709/614/Singulo-0.21.0-1.21.1N.jar",
-    "sha256": "5a53444c912b20f2c2620d2914c05a6afcd9de3f60d49684fe7c14f261bb2bd8",
-    "pending_public": true,
-    "unreleased": true
+    "sha256": "5a53444c912b20f2c2620d2914c05a6afcd9de3f60d49684fe7c14f261bb2bd8"
   }
 }
