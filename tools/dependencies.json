@@ -12,13 +12,17 @@
   "Singulo-0.21.0-1.20.1F.jar": {
     "property": "singuloJar",
     "loader": "forge",
-    "pending": true,
+    "url": "https://edge.forgecdn.net/files/9709/620/Singulo-0.21.0-1.20.1F.jar",
+    "sha256": "0d3217445e430811e8adcfca85bdd2509b31b1eb87ed3b5bf1d74220f99e9aa0",
+    "pending_public": true,
     "unreleased": true
   },
   "Singulo-0.21.0-1.20.1N.jar": {
     "property": "singuloJar",
     "loader": "neoforge",
-    "pending": true,
+    "url": "https://edge.forgecdn.net/files/9709/627/Singulo-0.21.0-1.20.1N.jar",
+    "sha256": "a67c8e86f5f6d02c64b75356ecb9e3c0da047754bbf533521d22248a6ae88403",
+    "pending_public": true,
     "unreleased": true
   }
 }
