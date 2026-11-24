@@ -4,6 +4,8 @@ Singulo のアンドロイド自動化と Applied Energistics 2（AE2）の ME �
 
 Applied Singulo connects Singulo's androids to Applied Energistics 2 (AE2) autocrafting. Link an Android ME Interface to a work order station to order supported crafting-table recipes from an ME terminal. Materials are kept separate by order, and finished items return to the ME network.
 
+Applied Singulo **0.2.1** adds compatibility with Singulo **0.22.x**, while retaining **0.21.x** support. Choose the matching Minecraft version and loader on the [CurseForge files page](https://www.curseforge.com/minecraft/mc-mods/applied-singulo/files). The table below links to the original 0.2.0 files for Singulo 0.21.x.
+
 ## 導入 / Installation
 
 Applied Singulo 0.2.0 ベータは CurseForge で公開中です。Minecraft とローダーが一致する行を選び、Singulo 0.21.x、対応する AE2 とその依存 MOD（GuideME など）、Applied Singulo を導入してください。
@@ -36,7 +38,7 @@ For eligible crafting-table recipes, AE2 fluid storage can supply the ingredient
 python3 tools/check_distribution.py # 配布 JAR 検査
 ```
 
-AE2・GuideME は `tools/dependencies.json` に固定した公式配布 URL から `libs/` へ自動ダウンロードされ、SHA-256 が一致しない JAR は削除して拒否します。Singulo 0.21.0 も公開済み公式 CurseForge JARをSHA-256照合して取得します（[詳細](docs/development.md#singulo-dependency)）。依存 JAR は Git に含めず、アドオンにも同梱しません。
+AE2・GuideME は `tools/dependencies.json` に固定した公式配布 URL から `libs/` へ自動ダウンロードされ、SHA-256 が一致しない JAR は削除して拒否します。Singulo 0.22.0 も公開済み公式 CurseForge JARをSHA-256照合して取得します（[詳細](docs/development.md#singulo-dependency)）。依存 JAR は Git に含めず、アドオンにも同梱しません。
 
 手元でビルドした Singulo などを試すときは `-PsinguloJar=/path/Singulo.jar`（`-Pae2Jar` / `-PguideMeJar` も同様）で上書きできます。上書きした JAR はハッシュ検査されないため、公開前の検証には使わないでください。サーバーは `runServer`。初回 EULA は利用者が確認してください。
 
