@@ -1,4 +1,4 @@
-> Applied Singulo 0.2.0 Beta / Minecraft 1.20.1 / Singulo 0.21.x. Earlier compatibility notes below are historical.
+> Applied Singulo 0.2.1 Beta / Minecraft 1.20.1 / Singulo 0.21.x and 0.22.x. Earlier compatibility notes below are historical.
 
 AE2 can offer liquid inputs for supported Android workbench recipes. An android needs a tank upgrade. Orders keep their private material custody; machine processing and liquid main products are not exported.
 
