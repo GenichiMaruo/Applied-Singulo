@@ -55,3 +55,7 @@ Recipe selection: Singulo's planner selects the first loaded card for each outpu
 The new fluid variant API follows that order. Do not rely on later cards with the same output
 and different ingredients as independently selectable escrow recipes; the existing order API
 selects an output, not a recipe ID. One intended recipe per output avoids this ambiguity.
+
+## Singulo 0.22 compatibility (Applied Singulo 0.2.1)
+
+The validation pin is the public CurseForge Singulo 0.22.0 file 9778100 for Minecraft 1.21.1 / NeoForge. Normal CI verifies its SHA-256 before running all integration tests. The runtime range is [0.21.0,0.23.0); the older 0.21.0 instructions above are historical. Publication still requires a passing maintained-branch CI receipt, immutable exact tag, and existing CurseForge guard.

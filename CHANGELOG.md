@@ -1,3 +1,8 @@
+# 0.2.1
+
+- Added compatibility with Singulo 0.22.x while preserving support for 0.21.x.
+- No changes to the crafting feature scope, AE2 requirements, or saved data.
+
 # 0.2.0 Beta (unreleased)
 
 - Require Singulo 0.21.x and use its public workshop discovery and location-card API.
