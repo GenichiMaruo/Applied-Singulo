@@ -39,3 +39,8 @@ blocked. Do not replace the pending marker with a local artifact or a 1.21.1 URL
 The current release request authorizes PR review, merge, and publication after all
 checks pass; the earlier historical authorization notes do not describe that request.
 See `docs/port-26.1.2.md` for port validation and limitations.
+
+
+## Singulo 0.23 compatibility (Applied Singulo 0.2.2)
+
+CI validates against the official CurseForge Singulo 0.23.0 JAR for each supported loader. The runtime range is [0.21.0,0.24.0). Releases still require the maintained-branch CI receipt, exact immutable tags, and the existing CurseForge upload guard.
