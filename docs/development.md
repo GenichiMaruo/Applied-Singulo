@@ -22,3 +22,8 @@ Applied Singulo now requires **Singulo 0.19.0**, for the private crafting escrow
 - `-PsinguloJar=/path/Singulo.jar` still overrides it.
 - `tools/check_distribution.py` prints **NOT PUBLISHABLE** while any dependency is unreleased. Before publishing, replace the entry with the released Singulo 0.19.0 URL and SHA-256 and re-run the GameTests.
 - The metadata range is `[0.19.0,0.20.0)`.
+
+
+## Singulo 0.23 compatibility (Applied Singulo 0.2.2)
+
+CI validates against the official CurseForge Singulo 0.23.0 JAR for each supported loader. The runtime range is [0.21.0,0.24.0). Releases still require the maintained-branch CI receipt, exact immutable tags, and the existing CurseForge upload guard.

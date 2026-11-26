@@ -1,3 +1,8 @@
+# 0.2.2
+
+- Added compatibility with Singulo 0.23.x.
+- No changes to the crafting feature scope, AE2 requirements, or saved data.
+
 # 0.2.0 Beta
 
 - Export Singulo 0.21 liquid-input variants for supported Android workbench recipes, alongside ordinary bucket patterns.
