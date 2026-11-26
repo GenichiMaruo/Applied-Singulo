@@ -59,3 +59,8 @@ selects an output, not a recipe ID. One intended recipe per output avoids this a
 ## Singulo 0.22 compatibility (Applied Singulo 0.2.1)
 
 The validation pin is the public CurseForge Singulo 0.22.0 file 9778100 for Minecraft 1.21.1 / NeoForge. Normal CI verifies its SHA-256 before running all integration tests. The runtime range is [0.21.0,0.23.0); the older 0.21.0 instructions above are historical. Publication still requires a passing maintained-branch CI receipt, immutable exact tag, and existing CurseForge guard.
+
+
+## Singulo 0.23 compatibility (Applied Singulo 0.2.2)
+
+CI validates against the official CurseForge Singulo 0.23.0 JAR for each supported loader. The runtime range is [0.21.0,0.24.0). Releases still require the maintained-branch CI receipt, exact immutable tags, and the existing CurseForge upload guard.

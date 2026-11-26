@@ -9,9 +9,9 @@
     "url": "https://github.com/AppliedEnergistics/GuideME/releases/download/v21.1.1/guideme-21.1.1.jar",
     "sha256": "8803bcfb02241e34217e189841c305e43cb38ccf229af803801fbe8df72e7711"
   },
-  "Singulo-0.22.0-1.21.1N.jar": {
+  "Singulo-0.23.0-1.21.1N.jar": {
     "property": "singuloJar",
-    "url": "https://edge.forgecdn.net/files/9778/100/Singulo-0.22.0-1.21.1N.jar",
-    "sha256": "2e5e6bbbec6321762f016b577d51987ddaa891fa8f5f56a5eec0f4b2e12f3712"
+    "url": "https://edge.forgecdn.net/files/9820/237/Singulo-0.23.0-1.21.1N.jar",
+    "sha256": "3587ced0dfd4ec9cf6c879a25f22994947bef97c7617b5ca0b84530317ce88bb"
   }
 }

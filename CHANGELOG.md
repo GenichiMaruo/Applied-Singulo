@@ -1,3 +1,8 @@
+# 0.2.2
+
+- Added compatibility with Singulo 0.23.x.
+- No changes to the crafting feature scope, AE2 requirements, or saved data.
+
 # 0.2.1
 
 - Added compatibility with Singulo 0.22.x while preserving support for 0.21.x.
